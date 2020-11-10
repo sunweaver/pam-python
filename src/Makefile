@@ -8,9 +8,9 @@ LIBDIR ?= /lib/security
 pam_python.so: pam_python.c setup.py Makefile
 	@rm -f "$@"
 	@[ ! -e build -o build/lib.*/$@ -nt setup.py -a build/lib.*/$@ -nt Makefile ] || rm -r build
-	CFLAGS="$(WARNINGS) -I/usr/local/lib/ " ./setup.py build
-	@#CFLAGS="-O0 $(WARNINGS)" ./setup.py build --debug
-	@#CFLAGS="-O0 $(WARNINGS)" Py_DEBUG=1 ./setup.py build --debug
+	CFLAGS="$(CFLAGS) $(WARNINGS) -I/usr/local/lib/ " ./setup.py build --debug
+	@#CFLAGS="$(CFLAGS) -Og $(WARNINGS)" ./setup.py build --debug
+	@#CFLAGS="$(CFLAGS) -Og $(WARNINGS)" Py_DEBUG=1 ./setup.py build --debug
 	ln -sf build/lib.*/$@ .
 
 .PHONY: install install-lib
@@ -39,7 +39,7 @@ test-pam_python.pam: test-pam_python.pam.in Makefile
 .PHONY: test
 test: pam_python.so ctest /etc/pam.d/test-pam_python.pam
 	python test.py
-	./ctest
+	./ctest python
 
 test-pam_python-installed.pam: test-pam_python.pam.in Makefile
 	sed "s,\\\$$PWD/pam-python.so,pam-python.so,;s,\\\$$PWD,$$(pwd),g" "$@.in" >"$@.tmp" 
@@ -51,4 +51,4 @@ test-pam_python-installed.pam: test-pam_python.pam.in Makefile
 .PHONY: installed-test
 installed-test: ctest /etc/pam.d/test-pam_python-installed.pam
 	python test.py
-	./ctest
+	./ctest python

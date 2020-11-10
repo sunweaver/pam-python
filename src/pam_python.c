@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2012,2014,2016,2019 Russell Stuart
+ * Copyright (c) 2007-2012,2014,2016,2019,2020 Russell Stuart
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published
@@ -77,6 +77,40 @@ typedef int Py_ssize_t;
 #endif
 
 /*
+ * Python2 / Python3 compatibily macros.
+ */
+#if PY_VERSION_HEX < 0x03000000
+#define	Py23_ExceptionBase	PyExc_StandardError
+#define	Py23_Int_AsLong		PyInt_AsLong
+#define	Py23_Int_Check		PyInt_Check
+#define Py23_Int_FromLong	PyInt_FromLong
+#define	Py23_String_AsString	PyString_AsString
+#define	Py23_String_Check	PyString_Check
+#define Py23_String_FromString	PyString_FromString
+#define	Py23_String_FromStringAndSize PyString_FromStringAndSize
+#define	Py23_String_GET_SIZE	PyString_GET_SIZE
+#define	Py23_String_Parse_Char	"S"
+#define	Py23_String_Size	PyString_Size
+#define	Py23_String_Type	PyString_Type
+#define	Py23_TYPE(p)		((p)->ob_type)
+#else
+#define	Py23_ExceptionBase	PyExc_Exception
+#define	Py23_Int_AsLong		PyLong_AsLong
+#define	Py23_Int_Check		PyLong_Check
+#define Py23_Int_FromLong	PyLong_FromLong
+#define	Py23_String_AsString	PyUnicode_AsUTF8
+#define	Py23_String_Check	PyUnicode_Check
+#define Py23_String_FromString	PyUnicode_FromString
+#define	Py23_String_FromStringAndSize PyUnicode_FromStringAndSize
+#define	Py23_String_GET_SIZE	PyUnicode_GET_SIZE
+#define	Py23_String_Parse_Char	"U"
+#define	Py23_String_Size	PyUnicode_Size
+#define	Py23_String_Type	PyUnicode_Type
+#define	Py23_TYPE(p)		Py_TYPE(p)
+#endif
+#define	Py23_Stringify(x)	#x
+
+/*
  * The python interpreter's shared library.
  */
 static char libpython_so[]	= LIBPYTHON_SO;
@@ -88,10 +122,12 @@ static void initialise_python(void)
 {
 #if	PY_MAJOR_VERSION*100 + PY_MINOR_VERSION >= 204
   Py_DontWriteBytecodeFlag = 1;
-  Py_IgnoreEnvironmentFlag = 1;
-  /* Py_IsolatedFlag = 1; 		Python3 only */
-  Py_NoSiteFlag = 1;
-  Py_NoUserSiteDirectory = 1;
+  Py_IgnoreEnvironmentFlag = 1;	/* Required to mitigate CVE-2019-16729 */
+  Py_NoUserSiteDirectory = 1;	/* Required to mitigate CVE-2019-16729 */
+#if PY_VERSION_HEX >= 0x03000000
+  Py_IsolatedFlag = 1;
+#endif
+  /* Py_NoSiteFlag = 1; 	Breaks too many things */
   Py_InitializeEx(0);
 #else
   size_t		signum;
@@ -124,7 +160,7 @@ static int generic_traverse(PyObject* self, visitproc visitor, void* arg)
   int			py_result;
   PyObject**		slot;
 
-  member = self->ob_type->tp_members;
+  member = Py23_TYPE(self)->tp_members;
   if (member == 0)
     return 0;
   /*
@@ -169,7 +205,7 @@ static int generic_clear(PyObject* self)
   PyMemberDef*		member;
   int			member_visible;
 
-  member = self->ob_type->tp_members;
+  member = Py23_TYPE(self)->tp_members;
   if (member == 0)
     return 0;
   /*
@@ -193,7 +229,7 @@ static int generic_clear(PyObject* self)
  */
 static void generic_dealloc(PyObject* self)
 {
-  PyTypeObject*		type = self->ob_type;
+  PyTypeObject*		type = Py23_TYPE(self);
 
   if (PyObject_IS_GC(self))
     PyObject_GC_UnTrack(self);
@@ -360,12 +396,21 @@ static int syslog_python2pam(PyObject* exception_type)
 /*
  * Return the modules filename.
  */
-static const char* get_module_path(PamHandleObject* pamHandle)
+static char* alloc_module_path(PamHandleObject* pamHandle)
 {
-  const char* result = PyModule_GetFilename(pamHandle->module);
+#if PY_VERSION_HEX < 0x03000000
+  char* result = PyModule_GetFilename(pamHandle->module);
   if (result != 0)
+    return strdup(result);
+#else
+  PyObject* tmp = PyModule_GetFilenameObject(pamHandle->module);
+  if (tmp != 0) {
+    char* result = strdup(Py23_String_AsString(tmp));
+    Py_DECREF(tmp);
     return result;
-  return MODULE_NAME;
+  }
+#endif
+  return strdup(MODULE_NAME);
 }
 
 /*
@@ -400,13 +445,13 @@ static int syslog_path_exception(const char* module_path, const char* errormsg)
   {
     name = PyObject_Str(stype);
     if (name != 0)
-      str_name = PyString_AsString(name);
+      str_name = Py23_String_AsString(name);
   }
   if (pvalue != 0)
   {
     message = PyObject_Str(pvalue);
     if (message != 0)
-      str_message = PyString_AsString(message);
+      str_message = Py23_String_AsString(message);
   }
   if (errormsg != 0 && str_name != 0 && str_message != 0)
   {
@@ -442,7 +487,10 @@ static int syslog_path_exception(const char* module_path, const char* errormsg)
  */
 static int syslog_exception(PamHandleObject* pamHandle, const char* errormsg)
 {
-  return syslog_path_exception(get_module_path(pamHandle), errormsg);
+  char* module_path = alloc_module_path(pamHandle);
+  int result = syslog_path_exception(module_path, errormsg);
+  free(module_path);
+  return result;
 }
 
 /*
@@ -481,7 +529,9 @@ static int syslog_message(PamHandleObject* pamHandle, const char* message, ...)
   int		result;
 
   va_start(ap, message);
-  result = syslog_path_vmessage(get_module_path(pamHandle), message, ap);
+  char* module_path = alloc_module_path(pamHandle);
+  result = syslog_path_vmessage(module_path, message, ap);
+  free(module_path);
   va_end(ap);
   return result;
 }
@@ -547,7 +597,10 @@ static int syslog_path_traceback(
  */
 static int syslog_traceback(PamHandleObject* pamHandle)
 {
-  return syslog_path_traceback(get_module_path(pamHandle), pamHandle);
+  char* module_path = alloc_module_path(pamHandle);
+  int result = syslog_path_traceback(module_path, pamHandle);
+  free(module_path);
+  return result;
 }
 
 /*
@@ -601,7 +654,7 @@ static PyObject* PamMessage_new(
 
   err = PyArg_ParseTupleAndKeywords(
       args, kwds, "iO!:Message", kwlist,
-      &msg_style, &PyString_Type, &msg);
+      &msg_style, &Py23_String_Type, &msg);
   if (!err)
     goto error_exit;
   pamMessage = (PamMessageObject*)type->tp_alloc(type, 0);
@@ -671,7 +724,7 @@ static PyObject* PamResponse_new(
       &resp, &resp_retcode);
   if (!err)
     goto error_exit;
-  if (resp != Py_None && !PyString_Check(resp))
+  if (resp != Py_None && !Py23_String_Check(resp))
   {
     PyErr_SetString(PyExc_TypeError, "resp must be a string or None");
     goto error_exit;
@@ -738,7 +791,7 @@ static PyObject* PamXAuthData_new(
   static char*		kwlist[] = {"name", "data", 0};
 
   err = PyArg_ParseTupleAndKeywords(
-      args, kwds, "SS:XAuthData", kwlist,
+      args, kwds, Py23_String_Parse_Char Py23_String_Parse_Char ":XAuthData", kwlist,
       &name, &data);
   if (!err)
     goto error_exit;
@@ -776,7 +829,7 @@ static int check_pam_result(PamHandleObject* pamHandle, int pam_result)
     PyErr_SetString(pamHandle->exception, error_string);
     PyErr_Fetch(&ptype, &pvalue, &ptraceback);
     PyErr_NormalizeException(&ptype, &pvalue, &ptraceback);
-    error_code = PyInt_FromLong(pam_result);
+    error_code = Py23_Int_FromLong(pam_result);
     if (error_code != NULL)
       PyObject_SetAttrString(pvalue, "pam_result", error_code);
     PyErr_Restore(ptype, pvalue, ptraceback);
@@ -799,7 +852,7 @@ static PyObject* PamHandle_get_item(PyObject* self, int item_type)
   if (check_pam_result(pamHandle, pam_result) == -1)
     goto error_exit;
   if (value != 0)
-    result = PyString_FromString(value);
+    result = Py23_String_FromString(value);
   else
   {
     result = Py_None;
@@ -823,7 +876,7 @@ static int PamHandle_set_item(
     value = 0;
   else
   {
-    value = PyString_AsString(pyValue);
+    value = Py23_String_AsString(pyValue);
     if (value == 0)
     {
       snprintf(
@@ -960,8 +1013,8 @@ static PyObject* PamEnvIter_key_entry(const char* entry)
 
   equals = strchr(entry, '=');
   if (equals == 0)
-    return PyString_FromString(entry);
-  return PyString_FromStringAndSize(entry, equals - entry);
+    return Py23_String_FromString(entry);
+  return Py23_String_FromStringAndSize(entry, equals - entry);
 }
 
 /*
@@ -973,8 +1026,8 @@ static PyObject* PamEnvIter_value_entry(const char* entry)
 
   equals = strchr(entry, '=');
   if (equals == 0)
-    return PyString_FromString("");
-  return PyString_FromString(equals + 1);
+    return Py23_String_FromString("");
+  return Py23_String_FromString(equals + 1);
 }
 
 /*
@@ -1029,12 +1082,12 @@ static const char* PamEnv_getkey(PyObject* key)
 {
   const char*		result;
 
-  if (!PyString_Check(key))
+  if (!Py23_String_Check(key))
   {
     PyErr_SetString(PyExc_TypeError, "PAM environment key must be a string");
     return 0;
   }
-  result = PyString_AS_STRING(key);
+  result = Py23_String_AsString(key);
   if (*result == '\0')
   {
     PyErr_SetString(
@@ -1086,7 +1139,7 @@ static PyObject* PamEnv_mp_subscript(PyObject* self, PyObject* key)
     PyErr_SetString(PyExc_KeyError, key_str);
     goto error_exit;
   }
-  result = PyString_FromString(value);
+  result = Py23_String_FromString(value);
 
 error_exit:
   return result;
@@ -1110,19 +1163,19 @@ static int PamEnv_mp_assign(PyObject* self, PyObject* key, PyObject* value)
     value_str = (char*)key_str;
   else
   {
-    if (!PyString_Check(value))
+    if (!Py23_String_Check(value))
     {
       PyErr_SetString(
           PyExc_TypeError, "PAM environment value must be a string");
       goto error_exit;
     }
-    value_str = malloc(PyString_Size(key) + 1 + PyString_Size(value) + 1);
+    value_str = malloc(Py23_String_Size(key) + 1 + Py23_String_Size(value) + 1);
     if (value_str == 0)
     {
       PyErr_NoMemory();
       goto error_exit;
     }
-    strcat(strcat(strcpy(value_str, key_str), "="), PyString_AS_STRING(value));
+    strcat(strcat(strcpy(value_str, key_str), "="), Py23_String_AsString(value));
   }
   pam_result = pam_putenv(pamEnv->pamHandle->pamh, value_str);
   if (pam_result != PAM_SUCCESS) // PAM_BAD_ITEM in Linux = PAM_BUF_ERR,PAM_SYSTEM_ERR
@@ -1219,7 +1272,7 @@ static PyObject* PamEnv_get(
     goto error_exit;
   value_str = pam_getenv(pamEnv->pamHandle->pamh, key_str);
   if (value_str != 0)
-    result = PyString_FromString(value_str);
+    result = Py23_String_FromString(value_str);
   else
   {
     result = default_value != 0 ? default_value : Py_None;
@@ -1576,7 +1629,7 @@ static int PamHandle_set_XAUTHDATA(
   name = PyObject_GetAttrString(pyValue, "name");
   if (name == 0)
     goto error_exit;
-  name_str = PyString_AsString(name);
+  name_str = Py23_String_AsString(name);
   if (name_str == 0)
   {
     PyErr_SetString(PyExc_TypeError, "xauthdata.name must be a string");
@@ -1588,14 +1641,14 @@ static int PamHandle_set_XAUTHDATA(
     PyErr_NoMemory();
     goto error_exit;
   }
-  xauth_data.namelen = PyString_GET_SIZE(name);
+  xauth_data.namelen = Py23_String_GET_SIZE(name);
   /*
    * Get the data.
    */
   data = PyObject_GetAttrString(pyValue, "data");
   if (data == 0)
     goto error_exit;
-  data_str = PyString_AsString(data);
+  data_str = Py23_String_AsString(data);
   if (data_str == 0)
   {
     PyErr_SetString(PyExc_TypeError, "xauthdata.data must be a string");
@@ -1607,7 +1660,7 @@ static int PamHandle_set_XAUTHDATA(
     PyErr_NoMemory();
     goto error_exit;
   }
-  xauth_data.datalen = PyString_GET_SIZE(data);
+  xauth_data.datalen = Py23_String_GET_SIZE(data);
   /*
    * Set the item.  If that worked PAM will have swallowed the strings inside
    * of it, so we must not free them.
@@ -1769,16 +1822,16 @@ static int PamHandle_conversation_2message(
   msg_style = PyObject_GetAttrString(object, "msg_style");
   if (msg_style == 0)
     goto error_exit;
-  if (!PyInt_Check(msg_style) && !PyLong_Check(msg_style))
+  if (!Py23_Int_Check(msg_style) && !PyLong_Check(msg_style))
   {
     PyErr_SetString(PyExc_TypeError, "message.msg_style must be an int");
     goto error_exit;
   }
-  message->msg_style = PyInt_AsLong(msg_style);
+  message->msg_style = Py23_Int_AsLong(msg_style);
   msg = PyObject_GetAttrString(object, "msg");
   if (msg == 0)
     goto error_exit;
-  message->msg = PyString_AsString(msg);
+  message->msg = Py23_String_AsString(msg);
   if (message->msg == 0)
   {
     PyErr_SetString(PyExc_TypeError, "message.msg must be a string");
@@ -1979,7 +2032,7 @@ static PyObject* PamHandle_get_user(
   if (check_pam_result(pamHandle, pam_result) == -1)
     goto error_exit;
   if (user != 0)
-    result = PyString_FromString(user);
+    result = Py23_String_FromString(user);
   else
   {
     result = Py_None;
@@ -2023,7 +2076,7 @@ static PyObject* PamHandle_strerror(
   }
   else
   {
-    result = PyString_FromString(err);
+    result = Py23_String_FromString(err);
     if (result == 0)
       goto error_exit;
   }
@@ -2317,7 +2370,7 @@ static PyTypeObject* newHeapType(
   PyTypeObject*		result = 0;
   PyTypeObject*		type = 0;
 
-  pyName = PyString_FromString(name);
+  pyName = Py23_String_FromString(name);
   if (pyName == 0)
     goto error_exit;
   type = (PyTypeObject*)PyType_Type.tp_alloc(&PyType_Type, 0);
@@ -2342,7 +2395,7 @@ static PyTypeObject* newHeapType(
   type->tp_methods = methods;
   type->tp_members = members;
   type->tp_getset = getset;
-  type->tp_name = PyString_AsString(pyName);
+  type->tp_name = Py23_String_AsString(pyName);
 #if PY_VERSION_HEX < 0x02050000
   ((PyHeapTypeObject*)type)->name = pyName;
 #else
@@ -2503,7 +2556,7 @@ static int get_pamHandle(
   pamHandle->pamh = pamh;
   pamHandle->py_initialized = do_initialize;
   pamHandle->exception = PyErr_NewException(
-    PAMHANDLE_NAME "." PAMHANDLEEXCEPTION_NAME, PyExc_StandardError, NULL);
+    PAMHANDLE_NAME "." PAMHANDLEEXCEPTION_NAME, Py23_ExceptionBase, NULL);
   if (pamHandle->exception == NULL)
     goto error_exit;
   /*
@@ -2523,8 +2576,8 @@ static int get_pamHandle(
     pam_result = syslog_path_exception(module_path, "Can't create pamh.env");
     goto error_exit;
   }
-  pamEnv->ob_type->tp_as_mapping = &PamEnv_as_mapping;
-  pamEnv->ob_type->tp_iter = PamEnv_iter;
+  Py23_TYPE(pamEnv)->tp_as_mapping = &PamEnv_as_mapping;
+  Py23_TYPE(pamEnv)->tp_iter = PamEnv_iter;
   pamEnv->pamHandle = pamHandle;
   pamEnv->pamEnvIter_type = newHeapType(
       pamHandle_module,			/* __module__ */
@@ -2711,10 +2764,10 @@ static int call_python_handler(
     handler_args = Py_BuildValue("(O)", pamHandle);
   else
   {
-    flags_object = PyInt_FromLong(flags);
+    flags_object = Py23_Int_FromLong(flags);
     if (flags_object == 0)
     {
-      pam_result = syslog_exception(pamHandle, "PyInt_FromLong(flags) failed");
+      pam_result = syslog_exception(pamHandle, Py23_Stringify(Py23_Int_FromLong) "(flags) failed");
       goto error_exit;
     }
     argv_object = PyList_New(argc);
@@ -2725,12 +2778,12 @@ static int call_python_handler(
     }
     for (i = 0; i < argc; i += 1)
     {
-      arg_object = PyString_FromString(argv[i]);
+      arg_object = Py23_String_FromString(argv[i]);
       if (arg_object == 0)
       {
 	pam_result = syslog_exception(
 	    pamHandle,
-	    "PyString_FromString(argv[i]) failed");
+	    Py23_Stringify(Py23_String_FromString) "(argv[i]) failed");
 	goto error_exit;
       }
       PyList_SET_ITEM(argv_object, i, arg_object);
@@ -2808,14 +2861,14 @@ static int call_handler(
   /*
    * It must return an integer.
    */
-  if (!PyInt_Check(py_resultobj) && !PyLong_Check(py_resultobj))
+  if (!Py23_Int_Check(py_resultobj) && !PyLong_Check(py_resultobj))
   {
     pam_result = syslog_message(
 	pamHandle,
 	"%s() did not return an integer.", handler_name);
     goto error_exit;
   }
-  pam_result = PyInt_AsLong(py_resultobj);
+  pam_result = Py23_Int_AsLong(py_resultobj);
 
 error_exit:
   py_xdecref(handler_function);

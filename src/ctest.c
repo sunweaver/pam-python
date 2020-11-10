@@ -3,7 +3,7 @@
  * manually:
  *   gcc -O0 -g -Wall -o test -lpam test.c
  *   sudo ln -s $PWD/test-pam_python.pam /etc/pam.d
- *   ./ctest
+ *   ./ctest python|python3
  *   sudo rm /etc/pam.d/test-pam_python.pam
  */
 #define	_GNU_SOURCE
@@ -20,6 +20,7 @@
 #include <unistd.h>
 
 struct walk_info {
+  const char*	pam_python_so;
   int		libpam_python_seen;
   int		python_seen;
 };
@@ -95,23 +96,31 @@ int main(int argc, char **argv)
   pam_handle_t*		pamh;
   struct walk_info	walk_info_before;
   struct walk_info	walk_info_after;
+  const char*		pyver;
+  char			filename[128];
 
-  (void)argc;
-  (void)argv;
-  if (access("/etc/pam.d/test-pam_python.pam", 0) != 0)
+  if (argc != 2 || !(strcmp(argv[1], "python") || strcmp(argv[1], "python3"))) {
+    fprintf(stderr, "usage: %s python|python3\n", argv[0]);
+    exit(1);
+  }
+  pyver = argv[1];
+  sprintf(filename, "/etc/pam.d/test-pam_%s.pam", pyver);
+  if (access(filename, 0) != 0)
   {
     fprintf(
       stderr,
       "**WARNING**\n"
-      "  This test requires ./test-pam_python.pam configuration to be\n"
-      "  available to PAM But it doesn't appear to be in /etc/pam.d.\n"
+      "  This test requires ./test-pam_%s.pam configuration to be\n"
+      "  available to PAM But it doesn't appear to be in /etc/pam.d.\n",
+      pyver
     );
   }
   printf("Testing calls from C");
   fflush(stdout);
   convstruct.conv = conv;
   convstruct.appdata_ptr = 0;
-  if (pam_start("test-pam_python.pam", "", &convstruct, &pamh) == -1)
+  sprintf(filename, "test-pam_%s.pam", pyver);
+  if (pam_start(filename, "", &convstruct, &pamh) == -1)
   {
     fprintf(stderr, "pam_start failed\n");
     exit(1);
@@ -122,15 +131,20 @@ int main(int argc, char **argv)
   call_pam(&exit_status, "pam_acct_mgmt", pamh, pam_acct_mgmt);
   call_pam(&exit_status, "pam_open_session", pamh, pam_open_session);
   call_pam(&exit_status, "pam_close_session", pamh, pam_close_session);
+  sprintf(filename, "/pam_%s.so", pyver);
+  memset(&walk_info_before, 0, sizeof(walk_info_before));
+  walk_info_before.pam_python_so = filename;
   walk_dlls(&walk_info_before);
   call_pam(&exit_status, "pam_end", pamh, pam_end);
   if (exit_status == 0)
     printf(" OK\n");
+  memset(&walk_info_after, 0, sizeof(walk_info_after));
+  walk_info_after.pam_python_so = filename;
   walk_dlls(&walk_info_after);
   printf("Testing dll load/unload ");
   if (!walk_info_before.libpam_python_seen)
   {
-    fprintf(stderr, "It looks like pam_python.so wasn't loaded!\n");
+    fprintf(stderr, "It looks like pam_%s.so wasn't loaded!\n", pyver);
     exit_status = 1;
   }
   else if (!walk_info_before.python_seen)
@@ -140,7 +154,7 @@ int main(int argc, char **argv)
   }
   else if (walk_info_after.libpam_python_seen)
   {
-    fprintf(stderr, "pam_python.so wasn't unloaded.\n");
+    fprintf(stderr, "pam_%s.so wasn't unloaded.\n", pyver);
     exit_status = 1;
   }
   else if (walk_info_after.python_seen)

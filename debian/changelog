@@ -1,3 +1,10 @@
+pam-python (1.0.8-1) unstable; urgency=high
+
+  * New upstream.
+  * Move to explicit python2 versioning.  Closes: #967194.
+
+ -- Russell Stuart <russell-debian@stuart.id.au>  Thu,  5 Nov 2020 20:47:48 +1000
+
 pam-python (1.0.7-1) unstable; urgency=high
 
   * New upstream.
