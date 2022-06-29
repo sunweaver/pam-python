@@ -1,4 +1,4 @@
-#!/usr/bin/python2 -W default
+#!/usr/bin/env python3 -W default
 import warnings; warnings.simplefilter('default')
 
 import distutils.sysconfig

@@ -40,6 +40,7 @@
 
 #undef	_POSIX_C_SOURCE
 
+#define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #include <dlfcn.h>
 #include <signal.h>
@@ -102,9 +103,9 @@ typedef int Py_ssize_t;
 #define	Py23_String_Check	PyUnicode_Check
 #define Py23_String_FromString	PyUnicode_FromString
 #define	Py23_String_FromStringAndSize PyUnicode_FromStringAndSize
-#define	Py23_String_GET_SIZE	PyUnicode_GET_SIZE
+#define	Py23_String_GET_SIZE	PyUnicode_GET_LENGTH
 #define	Py23_String_Parse_Char	"U"
-#define	Py23_String_Size	PyUnicode_Size
+#define	Py23_String_Size	PyBytes_Size
 #define	Py23_String_Type	PyUnicode_Type
 #define	Py23_TYPE(p)		Py_TYPE(p)
 #endif
@@ -434,7 +435,7 @@ static int syslog_path_exception(const char* module_path, const char* errormsg)
    * Just print the exception in some recognisable form, hopefully.
    */
   syslog_open(module_path);
-  if (PyClass_Check(ptype))
+  if (PyType_Check(ptype))
     stype = PyObject_GetAttrString(ptype, "__name__");
   else
   {
@@ -578,7 +579,7 @@ static int syslog_path_traceback(
       "OOOOO", ptype, pvalue, ptraceback, Py_None, pamHandle->syslogFile);
   if (args != 0)
   {
-    py_resultobj = PyEval_CallObject(pamHandle->print_exception, args);
+    py_resultobj = PyObject_CallObject(pamHandle->print_exception, args);
     if (py_resultobj != 0)
       SyslogFile_flush(pamHandle->syslogFile);
   }
@@ -2802,7 +2803,7 @@ static int call_python_handler(
   /*
    * Call the Python handler function.
    */
-  py_resultobj = PyEval_CallObject(handler_function, handler_args);
+  py_resultobj = PyObject_CallObject(handler_function, handler_args);
   /*
    * Did it throw an exception?
    */
