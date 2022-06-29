@@ -49,9 +49,9 @@ def test(who, pamh, flags, argv):
   if not os.getcwd() in sys.path:
     # Needed in python 3.9
     sys.path.insert(0,os.getcwd())
-  import test
-  if not hasattr(test, "test_function"):# only true if not called via "main"
+  if 'test' not in sys.modules:# only true if not called via "main"
     return pamh.PAM_SUCCESS		# normally happens only if run by ctest
+  import test
   test_function = globals()[test.test_function.__name__]
   return test_function(test.test_results, who, pamh, flags, argv)
 
@@ -95,7 +95,7 @@ def run_basic_calls(results):
   pam.open_session()
   pam.close_session()
   del pam
-  me = os.path.join(os.getcwd(), __file__)
+  me = os.path.normpath(os.path.join(os.getcwd(), __file__))
   expected_results = [
       (py23_function_name(pam_sm_authenticate), 0, [me]),
       (py23_function_name(pam_sm_acct_mgmt), 0, [me, 'arg1', 'arg2']),

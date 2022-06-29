@@ -47,6 +47,11 @@
 #include <structmember.h>
 #include <syslog.h>
 
+#ifndef __STRING
+#define __STRING(s) str_helper(s)
+#define str_helper(s) #s
+#endif
+
 #ifndef	MODULE_NAME
 #define	MODULE_NAME		"libpam_python"
 #endif
@@ -877,7 +882,7 @@ static int PamHandle_set_item(
     value = 0;
   else
   {
-    value = Py23_String_AsString(pyValue);
+    value = (char*) Py23_String_AsString(pyValue);
     if (value == 0)
     {
       snprintf(
