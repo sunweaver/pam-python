@@ -12,6 +12,14 @@ pam_python
     http://pam-python.sourceforge.net/
 
 
+bugfix/py3 branch
+-----------------
+
+  This branch copies [Ninlive's Python 3 porting
+  effort](https://github.com/Ninlives/pam-python) on top of a proper
+  repository mercurial-to-git repository fork.
+
+
 Dependencies
 ------------
 
