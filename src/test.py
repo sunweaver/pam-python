@@ -1,4 +1,4 @@
-#!/usr/bin/env python3 -W default
+#!/usr/bin/env -S python3 -W default
 #
 # This is the test script for libpython-pam.  There aren't many stones
 # left unturned.
