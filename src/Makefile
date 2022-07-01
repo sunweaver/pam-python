@@ -10,9 +10,9 @@ PYTHON ?= python
 pam_python.so: pam_python.c setup.py Makefile
 	@rm -f "$@"
 	@[ ! -e build -o build/lib.*/$@ -nt setup.py -a build/lib.*/$@ -nt Makefile ] || rm -r build
-	CFLAGS="$(CFLAGS) $(WARNINGS) -I/usr/local/lib/ " ./setup.py build --debug
-	@#CFLAGS="$(CFLAGS) -Og $(WARNINGS)" ./setup.py build --debug
-	@#CFLAGS="$(CFLAGS) -Og $(WARNINGS)" Py_DEBUG=1 ./setup.py build --debug
+	CFLAGS="$(CFLAGS) $(WARNINGS) -I/usr/local/lib/ " $(PYTHON) setup.py build --debug
+	@#CFLAGS="$(CFLAGS) -Og $(WARNINGS)" $(PYTHON) setup.py build --debug
+	@#CFLAGS="$(CFLAGS) -Og $(WARNINGS)" Py_DEBUG=1 $(PYTHON) setup.py build --debug
 	ln -sf build/lib.*/$@ .
 
 .PHONY: install install-lib
