@@ -5,6 +5,8 @@ WARNINGS=-Wall -Wextra -Wundef -Wshadow -Wpointer-arith -Wbad-function-cast -Wsi
 
 LIBDIR ?= /lib/security
 
+PYTHON ?= python
+
 pam_python.so: pam_python.c setup.py Makefile
 	@rm -f "$@"
 	@[ ! -e build -o build/lib.*/$@ -nt setup.py -a build/lib.*/$@ -nt Makefile ] || rm -r build
@@ -21,34 +23,34 @@ install-lib:
 
 .PHONY: clean
 clean:
-	rm -rf build ctest pam_python.so test-pam_python.pam test.pyc core
-	[ ! -e /etc/pam.d/test-pam_python.pam ] || { s=$$([ $$(id -u) = 0 ] || echo sudo); $$s rm -f /etc/pam.d/test-pam_python.pam; }
-	[ ! -e /etc/pam.d/test-pam_python-installed.pam ] || { s=$$([ $$(id -u) = 0 ] || echo sudo); $$s rm -f /etc/pam.d/test-pam_python-installed.pam; }
+	rm -rf build ctest pam_python.so test-pam_$(PYTHON).pam test.pyc core
+	[ ! -e /etc/pam.d/test-pam_$(PYTHON).pam ] || { s=$$([ $$(id -u) = 0 ] || echo sudo); $$s rm -f /etc/pam.d/test-pam_$(PYTHON).pam; }
+	[ ! -e /etc/pam.d/test-pam_$(PYTHON)-installed.pam ] || { s=$$([ $$(id -u) = 0 ] || echo sudo); $$s rm -f /etc/pam.d/test-pam_$(PYTHON)-installed.pam; }
 
 .PHONY: ctest
 ctest:	ctest.c Makefile
 	gcc -O0 $(WARNINGS) -g -o $@ ctest.c -lpam
 
-test-pam_python.pam: test-pam_python.pam.in Makefile
+test-pam_$(PYTHON).pam: test-pam_python.pam.in Makefile
 	sed "s,\\\$$PWD,$$(pwd),g" "$@.in" >"$@.tmp" 
 	mv $@.tmp $@
 
-/etc/pam.d/test-pam_python.pam: test-pam_python.pam
-	s=$$([ $$(id -u) = 0 ] || echo sudo); $$s ln -sf $$(pwd)/test-pam_python.pam /etc/pam.d
+/etc/pam.d/test-pam_$(PYTHON).pam: test-pam_$(PYTHON).pam
+	s=$$([ $$(id -u) = 0 ] || echo sudo); $$s ln -sf $$(pwd)/test-pam_$(PYTHON).pam /etc/pam.d
 
 .PHONY: test
-test: pam_python.so ctest /etc/pam.d/test-pam_python.pam
-	python test.py
-	./ctest python
+test: pam_python.so ctest /etc/pam.d/test-pam_$(PYTHON).pam
+	$(PYTHON) test.py
+	./ctest $(PYTHON)
 
-test-pam_python-installed.pam: test-pam_python.pam.in Makefile
+test-pam_$(PYTHON)-installed.pam: test-pam_python.pam.in Makefile
 	sed "s,\\\$$PWD/pam-python.so,pam-python.so,;s,\\\$$PWD,$$(pwd),g" "$@.in" >"$@.tmp" 
 	mv $@.tmp $@
 
-/etc/pam.d/test-pam_python-installed.pam: test-pam_python-installed.pam
-	s=$$([ $$(id -u) = 0 ] || echo sudo); $$s ln -sf $$(pwd)/test-pam_python-installed.pam /etc/pam.d
+/etc/pam.d/test-pam_$(PYTHON)-installed.pam: test-pam_$(PYTHON)-installed.pam
+	s=$$([ $$(id -u) = 0 ] || echo sudo); $$s ln -sf $$(pwd)/test-pam_$(PYTHON)-installed.pam /etc/pam.d
 
 .PHONY: installed-test
-installed-test: ctest /etc/pam.d/test-pam_python-installed.pam
-	python test.py
-	./ctest python
+installed-test: ctest /etc/pam.d/test-pam_$(PYTHON)-installed.pam
+	$(PYTHON) test.py
+	./ctest $(PYTHON)
