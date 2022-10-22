@@ -110,7 +110,7 @@ typedef int Py_ssize_t;
 #define	Py23_String_FromStringAndSize PyUnicode_FromStringAndSize
 #define	Py23_String_GET_SIZE	PyUnicode_GET_LENGTH
 #define	Py23_String_Parse_Char	"U"
-#define	Py23_String_Size	PyBytes_Size
+#define	Py23_String_Size	PyUnicode_GET_LENGTH
 #define	Py23_String_Type	PyUnicode_Type
 #define	Py23_TYPE(p)		Py_TYPE(p)
 #endif
