@@ -17,14 +17,14 @@ if sys.hexversion < 0x03000000:
   py23_standard_exception = StandardError
   def py23_function_name(func):
     return func.func_name
+  TEST_PAM_MODULE = "test-pam_python.pam"
 else:
   py23_base_exception = BaseException
   py23_standard_exception = Exception
   def py23_function_name(func):
     return func.__name__
+  TEST_PAM_MODULE = "test-pam_python3.pam"
 
-
-TEST_PAM_MODULE	= "test-pam_python.pam"
 TEST_PAM_USER	= "root"
 
 #
