@@ -23,7 +23,7 @@ install-lib:
 
 .PHONY: clean
 clean:
-	rm -rf build ctest pam_python.so test-pam_$(PYTHON).pam test.pyc core
+	rm -rf build ctest pam_python.so test-pam_$(PYTHON).pam test.pyc core __pycache__
 	[ ! -e /etc/pam.d/test-pam_$(PYTHON).pam ] || { s=$$([ $$(id -u) = 0 ] || echo sudo); $$s rm -f /etc/pam.d/test-pam_$(PYTHON).pam; }
 	[ ! -e /etc/pam.d/test-pam_$(PYTHON)-installed.pam ] || { s=$$([ $$(id -u) = 0 ] || echo sudo); $$s rm -f /etc/pam.d/test-pam_$(PYTHON)-installed.pam; }
 
