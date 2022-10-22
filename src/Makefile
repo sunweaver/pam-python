@@ -1,4 +1,4 @@
-PYTHON ?= python
+PYTHON ?= python3
 
 all:	ctest pam_python.so test-pam_$(PYTHON).pam
 
