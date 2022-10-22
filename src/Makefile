@@ -13,7 +13,7 @@ pam_python.so: pam_python.c setup.py Makefile
 	CFLAGS="$(CFLAGS) $(WARNINGS) -I/usr/local/lib/ " $(PYTHON) setup.py build --debug
 	@#CFLAGS="$(CFLAGS) -Og $(WARNINGS)" $(PYTHON) setup.py build --debug
 	@#CFLAGS="$(CFLAGS) -Og $(WARNINGS)" Py_DEBUG=1 $(PYTHON) setup.py build --debug
-	ln -sf build/lib.*/$@ .
+	ln -sf $$(find build/lib.*/pam_python*.so -type f | head -n1) $@
 
 .PHONY: install install-lib
 install: install-lib
