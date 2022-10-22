@@ -440,17 +440,21 @@ def run_xauthdata(results):
   pam.open_session()
   pam.close_session()
   del pam
+  if sys.hexversion < 0x03000000:
+      string_type="string"
+  else:
+      string_type="str"
   expected_results = [
       py23_function_name(pam_sm_authenticate), py23_function_name(pam_sm_open_session),
       ("name='name-module', data='data-module'"),
-      'except: XAuthData() argument 1 must be string, not None',
-      'except: XAuthData() argument 2 must be string, not int',
+      'except: XAuthData() argument 1 must be '+string_type+', not None',
+      'except: XAuthData() argument 2 must be '+string_type+', not int',
       ("name='name-XA', data='data-XA'"),
       ("name='name-xa', data='data-xa'"),
       py23_function_name(pam_sm_close_session),
       ("name='name-module', data='data-module'"),
-      'except: XAuthData() argument 1 must be string, not None',
-      'except: XAuthData() argument 2 must be string, not int',
+      'except: XAuthData() argument 1 must be '+string_type+', not None',
+      'except: XAuthData() argument 2 must be '+string_type+', not int',
       ("name='name-XA', data='data-XA'"),
       ("name='name-xa', data='data-xa'"),
       py23_function_name(pam_sm_end)]
