@@ -44,7 +44,7 @@ test: pam_python.so ctest /etc/pam.d/test-pam_$(PYTHON).pam
 	./ctest $(PYTHON)
 
 test-pam_$(PYTHON)-installed.pam: test-pam_python.pam.in Makefile
-	sed "s,\\\$$PWD/pam-python.so,pam-python.so,;s,\\\$$PWD,$$(pwd),g" "$<" >"$@.tmp"
+	sed "s,\\\$$PWD/pam_python.so,pam_python.so,;s,\\\$$PWD,$$(pwd),g" "$<" >"$@.tmp"
 	mv $@.tmp $@
 
 /etc/pam.d/test-pam_$(PYTHON)-installed.pam: test-pam_$(PYTHON)-installed.pam
