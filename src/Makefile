@@ -48,7 +48,7 @@ test-pam_$(PYTHON)-installed.pam: test-pam_python.pam.in Makefile
 	mv $@.tmp $@
 
 /etc/pam.d/test-pam_$(PYTHON)-installed.pam: test-pam_$(PYTHON)-installed.pam
-	s=$$([ $$(id -u) = 0 ] || echo sudo); $$s ln -sf $$(pwd)/test-pam_$(PYTHON)-installed.pam /etc/pam.d
+	s=$$([ $$(id -u) = 0 ] || echo sudo); $$s ln -sf $$(pwd)/test-pam_$(PYTHON)-installed.pam /etc/pam.d; $$s ln -sf test-pam_$(PYTHON)-installed.pam /etc/pam.d/test-pam_$(PYTHON).pam
 
 .PHONY: installed-test
 installed-test: ctest /etc/pam.d/test-pam_$(PYTHON)-installed.pam
