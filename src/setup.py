@@ -41,7 +41,7 @@ ext_modules = [
       include_dirs = [],
       library_dirs=[],
       define_macros=[('LIBPYTHON_SO','"'+libpython_so+'"')] + Py_DEBUG,
-      libraries=["pam","python%d.%d" % sys.version_info[:2]],
+      libraries=["pam","python%d.%d%s" % ( sys.version_info[0], sys.version_info[1], sysconfig.get_config_var('ABIFLAGS'))],
     ), ]
 
 setup(
