@@ -1,7 +1,10 @@
 #!/usr/bin/env -S python3 -W default
 import warnings; warnings.simplefilter('default')
 
-import distutils.sysconfig
+try:
+  import sysconfig
+except ImportError:
+  from distutils import sysconfig
 import os 
 import sys
 
@@ -30,7 +33,7 @@ if "Py_DEBUG" not in os.environ:
 else:
   Py_DEBUG = [('Py_DEBUG',1)]
 
-libpython_so = distutils.sysconfig.get_config_var('INSTSONAME')
+libpython_so = sysconfig.get_config_var('INSTSONAME')
 ext_modules = [
     Extension(
       "pam_python",
@@ -38,7 +41,7 @@ ext_modules = [
       include_dirs = [],
       library_dirs=[],
       define_macros=[('LIBPYTHON_SO','"'+libpython_so+'"')] + Py_DEBUG,
-      libraries=["pam","python%d.%d" % sys.version_info[:2]],
+      libraries=["pam","python%d.%d%s" % ( sys.version_info[0], sys.version_info[1], sysconfig.get_config_var('ABIFLAGS'))],
     ), ]
 
 setup(
