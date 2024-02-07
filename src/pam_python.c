@@ -127,6 +127,25 @@ static char libpython_so[]	= LIBPYTHON_SO;
 static void initialise_python(void)
 {
 #if	PY_MAJOR_VERSION*100 + PY_MINOR_VERSION >= 204
+#if	PY_MAJOR_VERSION*100 + PY_MINOR_VERSION >= 312
+  PyConfig config;
+  PyConfig_InitPythonConfig(&config);
+  config.isolated = 1;
+  config.write_bytecode = 0;
+  config.use_environment = 0;		/* Required to mitigate CVE-2019-16729 */
+  config.user_site_directory = 0;	/* Required to mitigate CVE-2019-16729 */
+  config.site_import = 1;
+  config.install_signal_handlers = 0;
+  PyStatus status = Py_InitializeFromConfig(&config);
+  if (PyStatus_Exception(status)) {
+    PyConfig_Clear(&config);
+    if (!PyStatus_IsExit(status)) {
+      Py_ExitStatusException(status);
+    }
+    abort();
+  }
+  PyConfig_Clear(&config);
+#else
   Py_DontWriteBytecodeFlag = 1;
   Py_IgnoreEnvironmentFlag = 1;	/* Required to mitigate CVE-2019-16729 */
   Py_NoUserSiteDirectory = 1;	/* Required to mitigate CVE-2019-16729 */
@@ -135,6 +154,7 @@ static void initialise_python(void)
 #endif
   /* Py_NoSiteFlag = 1; 	Breaks too many things */
   Py_InitializeEx(0);
+#endif
 #else
   size_t		signum;
   struct sigaction	oldsigaction[NSIG];
