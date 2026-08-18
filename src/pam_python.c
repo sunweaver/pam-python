@@ -2280,6 +2280,7 @@ static int load_user_module(
   PyObject*	module_dict = 0;
   FILE*		module_fp = 0;
   char*		user_module_name = 0;
+  const char*	tmp_const_user_module_name = 0;
   PyObject*	py_resultobj = 0;
   char*		dot;
   int		pam_result;
@@ -2300,11 +2301,11 @@ static int load_user_module(
   /*
    * Create the new module.
    */
-  user_module_name = strrchr(module_path, '/');
-  if (user_module_name == 0)
+  tmp_const_user_module_name = strrchr(module_path, '/');
+  if (tmp_const_user_module_name == 0)
     user_module_name = strdup(module_path);
   else
-    user_module_name = strdup(user_module_name + 1);
+    user_module_name = strdup(tmp_const_user_module_name + 1);
   if (user_module_name == 0)
   {
     syslog_path_message(MODULE_NAME, "out of memory");
