@@ -141,7 +141,8 @@ int main(int argc, char **argv)
   memset(&walk_info_after, 0, sizeof(walk_info_after));
   walk_info_after.pam_python_so = filename;
   walk_dlls(&walk_info_after);
-  printf("Testing dll load/unload ");
+  printf("Testing dll load/unload: ");
+  fflush(stdout);
   if (!walk_info_before.libpam_python_seen)
   {
     fprintf(stderr, "It looks like pam_%s.so wasn't loaded!\n", pyver);
@@ -159,7 +160,7 @@ int main(int argc, char **argv)
   }
   else if (walk_info_after.python_seen)
   {
-    fprintf(stderr, "libpythonX.Y.so wasn't uloaded.\n");
+    fprintf(stderr, "libpythonX.Y.so wasn't unloaded.\n");
     exit_status = 1;
   }
   else

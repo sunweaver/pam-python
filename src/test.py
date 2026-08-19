@@ -6,7 +6,7 @@
 # Best run from the Makefile using the target 'test'.  To run manually:
 #   sudo ln -s $PWD/test-pam_python.pam /etc/pam.d
 #   python test.py
-#   sudo rm /etc/pam.d/test-pam_python.pam 
+#   sudo rm /etc/pam.d/test-pam_python.pam
 #
 import warnings; warnings.simplefilter('default')
 import os
@@ -46,23 +46,34 @@ def pam_sm_chauthtok(pamh, flags, argv):
   return test(pam_sm_chauthtok, pamh, flags, argv)
 
 def test(who, pamh, flags, argv):
+  if 'test' not in sys.modules:         # only true if not called via "main"
+    return test_cve_2019_16729(pamh)    # happens only if run by ctest
   if not os.getcwd() in sys.path:
     # Needed in python 3.9
-    sys.path.insert(0,os.getcwd())
-  if 'test' not in sys.modules:# only true if not called via "main"
-    return pamh.PAM_SUCCESS		# normally happens only if run by ctest
+    sys.path.insert(0, os.getcwd())
   import test
   test_function = globals()[test.test_function.__name__]
   return test_function(test.test_results, who, pamh, flags, argv)
 
-def run_test(caller):
+def test_cve_2019_16729(pamh):
+  try:
+    import test_cve_2019_16729
+    sys.stderr.write('Failed CVE-2019-16729 test!\n')
+    sys.stderr.flush()
+    return pamh.PAM_SYSTEM_ERR
+  except ImportError:
+    pass
+  return pamh.PAM_SUCCESS
+
+
+def run_test(test_function):
   import test
-  test_name = caller.__name__[4:]
+  test_name = test_function.__name__[len('run_'):]
   sys.stdout.write("Testing " + test_name + " ")
   sys.stdout.flush()
   test.test_results = []
   test.test_function = globals()["test_" + test_name]
-  caller(test.test_results)
+  test_function(test.test_results)
   sys.stdout.write("OK\n")
 
 def pam_conv(auth, query_list, userData=None):
@@ -189,7 +200,7 @@ def test_constants(results, who, pamh, flags, argv):
   if who != pam_sm_authenticate:
     return pamh.PAM_SUCCESS
   pam_constants = dict([
-      (var, getattr(pamh,var))
+      (var, getattr(pamh, var))
       for var in dir(pamh)
       if var.startswith("PAM_") or var.startswith("_PAM_")])
   results.append(pam_constants)
@@ -631,6 +642,32 @@ def run_absent(results):
   assert_results(expected_results, results)
 
 #
+# Run ./ctest.c.
+#
+def run_ctest():
+  import tempfile
+  with tempfile.TemporaryDirectory() as tempdir:
+    #
+    # Run in a new Python interpreter, so it sees the PYTHONPATH environment
+    # variable we set.
+    #
+    tempdir = tempfile.mkdtemp()
+    with open(os.path.join(tempdir, 'test_cve_2019_16729.py'), "w") as handle:
+      handle.write("pass\n")
+    old_environ = os.environ
+    if 'PYTHONPATH' not in os.environ:
+      os.environ['PYTHONPATH'] = ''
+    else:
+      os.environ['PYTHONPATH'] += ':'
+    os.environ['PAM_PYTHON_TEST_CVE_2019_16729'] = tempdir
+    os.environ['PYTHONPATH'] += tempdir
+    ctest_prog = os.path.join(os.path.dirname(__file__), "ctest")
+    python_prog = os.path.basename(sys.executable)
+    results = [os.system(' '.join((ctest_prog, python_prog,)))]
+    expected_results = [0]
+    assert_results(expected_results, results)
+
+#
 # Entry point.
 #
 def main(argv):
@@ -646,6 +683,7 @@ def main(argv):
   run_test(run_fail_delay)
   run_test(run_exceptions)
   run_test(run_absent)
+  run_ctest()
 
 #
 # If run from Python run the test suite.  Otherwse we are being used
