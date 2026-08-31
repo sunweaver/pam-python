@@ -6,7 +6,7 @@
 # Best run from the Makefile using the target 'test'.  To run manually:
 #   sudo ln -s $PWD/test-pam_python.pam /etc/pam.d
 #   python test.py
-#   sudo rm /etc/pam.d/test-pam_python.pam 
+#   sudo rm /etc/pam.d/test-pam_python.pam
 #
 import warnings; warnings.simplefilter('default')
 import os
@@ -189,7 +189,7 @@ def test_constants(results, who, pamh, flags, argv):
   if who != pam_sm_authenticate:
     return pamh.PAM_SUCCESS
   pam_constants = dict([
-      (var, getattr(pamh,var))
+      (var, getattr(pamh, var))
       for var in dir(pamh)
       if var.startswith("PAM_") or var.startswith("_PAM_")])
   results.append(pam_constants)
