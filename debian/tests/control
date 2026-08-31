@@ -1,3 +1,0 @@
-Tests: pam-python-test.sh
-Depends: build-essential, libpam-python, python-pam
-Restrictions: needs-root
