@@ -70,8 +70,8 @@
 
 #define arr_size(x) (sizeof(x) / sizeof(*(x)))
 
-const char libpam_python_version[]      = "1.0.3";
-const char libpam_python_date[]         = "2014-05-05";
+const char libpam_python_version[]      = "1.1.0";
+const char libpam_python_date[]         = "2026-09-02";
 
 #define PyCFunctionKwds_cast (PyCFunction)(Py_ssize_t)
 
