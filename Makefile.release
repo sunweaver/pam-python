@@ -6,7 +6,7 @@
 # I will selfishly reject any patches that don't do that.
 #
 # It does the following:
-# 
+#
 # 1.  Verifies the changelogs have been updated to a consistent version.
 #
 # 2.  Updates the verison numbers and copyright dates in all source files.
@@ -41,7 +41,7 @@ RELEASE_HTDOCS=$(RELEASE_DIR)/htdocs
 RELEASE_FILES=$(RELEASE_DIR)/$(RELEASE_PACKAGE_NAME)-$(RELEASE_DEBIAN_VERSION)
 
 .PHONY: release
-release:	$(RELEASE_DIR)/release.stamp
+release: $(RELEASE_DIR)/release.stamp
 $(RELEASE_DIR)/release.stamp: $(RELEASE_SOURCES)
 	@echo ME=$(RELEASE_ME) PACKAGE=$(RELEASE_PACKAGE_NAME) VERSION=$(RELEASE_VERSION) YEAR=$(RELEASE_YEAR) MONTH=$(RELEASE_MONTH) DATE=$(RELEASE_DATE) DEBIAN_VERSION=$(RELEASE_DEBIAN_VERSION)
 	#
@@ -148,7 +148,7 @@ endif
 release-customise::
 
 .PHONY: release-upload
-release-upload:	release-upload-htdocs release-upload-files
+release-upload: release-upload-htdocs release-upload-files
 
 .PHONY: release-upload-htdocs
 release-upload-htdocs: $(RELEASE_DIR)/release.stamp
@@ -172,12 +172,12 @@ release-clean: release-project-clean
 	rm -rf $$(find . -name "*.orig" -o -name ".*.sw?")
 
 .PHONY: release-tag
-release-tag:	$(RELEASE_DIR)/release.stamp
+release-tag: $(RELEASE_DIR)/release.stamp
 	! hg status | grep '^?' || { echo "hg add hasn't been done" 1>&2; exit 1; }
 	! hg status | grep '^!' || { echo "hg rm hasn't been done" 1>&2; exit 1; }
 	[ -z "$$(hg resolv --list)" ] || { echo "There are unresolved merge conflicts" 1>&2; exit 1; }
 	[ -z "$$(hg status)" ] || \
-	  hg commit -m "Release $(RELEASE_PACKAGE_NAME)-$(RELEASE_DEBIAN_VERSION) - see ChangeLog.txt"
+	    hg commit -m "Release $(RELEASE_PACKAGE_NAME)-$(RELEASE_DEBIAN_VERSION) - see ChangeLog.txt"
 	hg tag "$(RELEASE_PACKAGE_NAME)-$(RELEASE_DEBIAN_VERSION)"
 
 

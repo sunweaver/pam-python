@@ -1,5 +1,5 @@
-PREFIX	?= /usr
-DOCDIR	?= $(PREFIX)/share/doc/pam_python
+PREFIX ?= /usr
+DOCDIR ?= $(PREFIX)/share/doc/pam_python
 
 .PHONY: build
 build:

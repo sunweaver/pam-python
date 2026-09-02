@@ -153,7 +153,7 @@ members:
 
 .. data:: PAM_???
 
-   All the :const:`PAM_???` constants defined in the PAM include files 
+   All the :const:`PAM_???` constants defined in the PAM include files
    version 1.1.1 are available. They are all read-only :class:`int`'s.
 
 
@@ -503,12 +503,12 @@ the interpreter (by calling :c:func:`Py_Initialize`) then it will call its
 finaliser :c:func:`Py_Finalize` when the last Python PAM module is destroyed.
 This is heuristic works in most scenarios. One example where is won't work is a
 sequence like::
-  
+
   start-python-pam-module;
   application-initialises-interpreter;
   stop-python-pam-module;
   application-stops-interpreter.
-  
+
 The above is doomed to fail.
 
 

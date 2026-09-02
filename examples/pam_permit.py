@@ -1,7 +1,7 @@
 #
 # Duplicates pam_permit.c
 #
-DEFAULT_USER	= "nobody"
+DEFAULT_USER = "nobody"
 
 def pam_sm_authenticate(pamh, flags, argv):
   try:

@@ -59,7 +59,7 @@ def check_nologin(pamh, nologin_file, retval_when_nofile):
     retval = pamh.PAM_USER_UNKNOWN
     msg_style = pamh.PAM_ERROR_MSG
   else:
-    if pwent[2] == 0:			# Is this root?
+    if pwent[2] == 0: # Is this root?
       retval = pamh.PAM_SUCCESS
       msg_style = pamh.PAM_TEXT_INFO
     else:
@@ -80,11 +80,11 @@ def check_nologin(pamh, nologin_file, retval_when_nofile):
 def pam_sm_authenticate(pamh, flags, argv):
   nologin_file, retval_when_nofile = parse_args(pamh, argv)
   return check_nologin(pamh, nologin_file, retval_when_nofile)
-  
+
 def pam_sm_setcred(pamh, flags, argv):
   nologin_file, retval_when_nofile = parse_args(pamh, argv)
   return retval_when_nofile
-  
+
 def pam_sm_acct_mgmt(pamh, flags, argv):
   nologin_file, retval_when_nofile = parse_args(pamh, argv)
   return check_nologin(pamh, nologin_file, retval_when_nofile)

@@ -96,7 +96,7 @@ def assert_results(expected_results, results):
 def test_basic_calls(results, who, pamh, flags, argv):
   results.append((py23_function_name(who), flags, argv))
   return pamh.PAM_SUCCESS
-  
+
 def run_basic_calls(results):
   pam = PAM.pam()
   pam.start(TEST_PAM_MODULE, TEST_PAM_USER, pam_conv)

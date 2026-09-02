@@ -35,10 +35,10 @@
 #else
 #include <security/pam_appl.h>
 #include <security/pam_constants.h>
-#define	_PAM_RETURN_VALUES	30	 // pam_types.h
+#define _PAM_RETURN_VALUES 30 // pam_types.h
 #endif
 
-#undef	_POSIX_C_SOURCE
+#undef _POSIX_C_SOURCE
 
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
@@ -52,28 +52,28 @@
 #define str_helper(s) #s
 #endif
 
-#ifndef	MODULE_NAME
-#define	MODULE_NAME		"libpam_python"
+#ifndef MODULE_NAME
+#define MODULE_NAME             "libpam_python"
 #endif
 
-#ifndef	DEFAULT_SECURITY_DIR
+#ifndef DEFAULT_SECURITY_DIR
 #ifdef __APPLE__
-#define DEFAULT_SECURITY_DIR	"/usr/lib/pam/"
+#define DEFAULT_SECURITY_DIR    "/usr/lib/pam/"
 #else
-#define	DEFAULT_SECURITY_DIR	"/lib/security/"
+#define DEFAULT_SECURITY_DIR    "/lib/security/"
 #endif
 #endif
 
-#define	PAMHANDLE_NAME		"PamHandle"
+#define PAMHANDLE_NAME          "PamHandle"
 
-#define	PAMHANDLEEXCEPTION_NAME	"PamException"
+#define PAMHANDLEEXCEPTION_NAME "PamException"
 
-#define arr_size(x)	(sizeof(x) / sizeof(*(x)))
+#define arr_size(x) (sizeof(x) / sizeof(*(x)))
 
-const char libpam_python_version[]	= "1.0.3";
-const char libpam_python_date[]		= "2014-05-05";
+const char libpam_python_version[]      = "1.0.3";
+const char libpam_python_date[]         = "2014-05-05";
 
-#define	PyCFunctionKwds_cast	(PyCFunction)(Py_ssize_t)
+#define PyCFunctionKwds_cast (PyCFunction)(Py_ssize_t)
 
 /*
  * Add typedef for Py_ssize_t if it you have an older python.
@@ -86,54 +86,54 @@ typedef int Py_ssize_t;
  * Python2 / Python3 compatibily macros.
  */
 #if PY_VERSION_HEX < 0x03000000
-#define	Py23_ExceptionBase	PyExc_StandardError
-#define	Py23_Int_AsLong		PyInt_AsLong
-#define	Py23_Int_Check		PyInt_Check
-#define Py23_Int_FromLong	PyInt_FromLong
-#define	Py23_String_AsString	PyString_AsString
-#define	Py23_String_Check	PyString_Check
-#define Py23_String_FromString	PyString_FromString
-#define	Py23_String_FromStringAndSize PyString_FromStringAndSize
-#define	Py23_String_GET_SIZE	PyString_GET_SIZE
-#define	Py23_String_Parse_Char	"S"
-#define	Py23_String_Size	PyString_Size
-#define	Py23_String_Type	PyString_Type
-#define	Py23_TYPE(p)		((p)->ob_type)
+#define Py23_ExceptionBase              PyExc_StandardError
+#define Py23_Int_AsLong                 PyInt_AsLong
+#define Py23_Int_Check                  PyInt_Check
+#define Py23_Int_FromLong               PyInt_FromLong
+#define Py23_String_AsString            PyString_AsString
+#define Py23_String_Check               PyString_Check
+#define Py23_String_FromString          PyString_FromString
+#define Py23_String_FromStringAndSize   PyString_FromStringAndSize
+#define Py23_String_GET_SIZE            PyString_GET_SIZE
+#define Py23_String_Parse_Char          "S"
+#define Py23_String_Size                PyString_Size
+#define Py23_String_Type                PyString_Type
+#define Py23_TYPE(p)                    ((p)->ob_type)
 #else
-#define	Py23_ExceptionBase	PyExc_Exception
-#define	Py23_Int_AsLong		PyLong_AsLong
-#define	Py23_Int_Check		PyLong_Check
-#define Py23_Int_FromLong	PyLong_FromLong
-#define	Py23_String_AsString	PyUnicode_AsUTF8
-#define	Py23_String_Check	PyUnicode_Check
-#define Py23_String_FromString	PyUnicode_FromString
-#define	Py23_String_FromStringAndSize PyUnicode_FromStringAndSize
-#define	Py23_String_GET_SIZE	PyUnicode_GET_LENGTH
-#define	Py23_String_Parse_Char	"U"
-#define	Py23_String_Size	PyUnicode_GET_LENGTH
-#define	Py23_String_Type	PyUnicode_Type
-#define	Py23_TYPE(p)		Py_TYPE(p)
+#define Py23_ExceptionBase              PyExc_Exception
+#define Py23_Int_AsLong                 PyLong_AsLong
+#define Py23_Int_Check                  PyLong_Check
+#define Py23_Int_FromLong               PyLong_FromLong
+#define Py23_String_AsString            PyUnicode_AsUTF8
+#define Py23_String_Check               PyUnicode_Check
+#define Py23_String_FromString          PyUnicode_FromString
+#define Py23_String_FromStringAndSize   PyUnicode_FromStringAndSize
+#define Py23_String_GET_SIZE            PyUnicode_GET_LENGTH
+#define Py23_String_Parse_Char          "U"
+#define Py23_String_Size                PyUnicode_GET_LENGTH
+#define Py23_String_Type                PyUnicode_Type
+#define Py23_TYPE(p)                    Py_TYPE(p)
 #endif
-#define	Py23_Stringify(x)	#x
+#define Py23_Stringify(x)               #x
 
 /*
  * The python interpreter's shared library.
  */
-static char libpython_so[]	= LIBPYTHON_SO;
+static char libpython_so[] = LIBPYTHON_SO;
 
 /*
  * Initialise Python.  How this should be done changed between versions.
  */
 static void initialise_python(void)
 {
-#if	PY_MAJOR_VERSION*100 + PY_MINOR_VERSION >= 204
-#if	PY_MAJOR_VERSION*100 + PY_MINOR_VERSION >= 312
+#if PY_MAJOR_VERSION*100 + PY_MINOR_VERSION >= 204
+#if PY_MAJOR_VERSION*100 + PY_MINOR_VERSION >= 312
   PyConfig config;
   PyConfig_InitPythonConfig(&config);
   config.isolated = 1;
   config.write_bytecode = 0;
-  config.use_environment = 0;		/* Required to mitigate CVE-2019-16729 */
-  config.user_site_directory = 0;	/* Required to mitigate CVE-2019-16729 */
+  config.use_environment = 0;              /* Required to mitigate CVE-2019-16729 */
+  config.user_site_directory = 0;          /* Required to mitigate CVE-2019-16729 */
   config.site_import = 1;
   config.install_signal_handlers = 0;
   PyStatus status = Py_InitializeFromConfig(&config);
@@ -147,17 +147,17 @@ static void initialise_python(void)
   PyConfig_Clear(&config);
 #else
   Py_DontWriteBytecodeFlag = 1;
-  Py_IgnoreEnvironmentFlag = 1;	/* Required to mitigate CVE-2019-16729 */
-  Py_NoUserSiteDirectory = 1;	/* Required to mitigate CVE-2019-16729 */
+  Py_IgnoreEnvironmentFlag = 1;            /* Required to mitigate CVE-2019-16729 */
+  Py_NoUserSiteDirectory = 1;              /* Required to mitigate CVE-2019-16729 */
 #if PY_VERSION_HEX >= 0x03000000
   Py_IsolatedFlag = 1;
 #endif
-  /* Py_NoSiteFlag = 1; 	Breaks too many things */
+  /* Py_NoSiteFlag = 1;                       Breaks too many things */
   Py_InitializeEx(0);
 #endif
 #else
-  size_t		signum;
-  struct sigaction	oldsigaction[NSIG];
+  size_t signum;
+  struct sigaction oldsigaction[NSIG];
 
   for (signum = 0; signum < arr_size(oldsigaction); signum += 1)
     sigaction(signum, 0, &oldsigaction[signum]);
@@ -180,11 +180,11 @@ static void py_xdecref(PyObject* object)
  */
 static int generic_traverse(PyObject* self, visitproc visitor, void* arg)
 {
-  PyMemberDef*		member;
-  int			member_visible;
-  PyObject*		object;
-  int			py_result;
-  PyObject**		slot;
+  PyMemberDef* member;
+  int          member_visible;
+  PyObject*    object;
+  int          py_result;
+  PyObject**   slot;
 
   member = Py23_TYPE(self)->tp_members;
   if (member == 0)
@@ -197,14 +197,14 @@ static int generic_traverse(PyObject* self, visitproc visitor, void* arg)
     for (; member->name != 0; member += 1)
     {
       if (member->type != T_OBJECT && member->type != T_OBJECT_EX)
-	continue;
+        continue;
       slot = (PyObject**)((char*)self + member->offset);
       object = *slot;
       if (object == 0)
-	continue;
+        continue;
       py_result = visitor(object, arg);
       if (py_result != 0)
-	return py_result;
+        return py_result;
     }
     member += 1;
   }
@@ -216,7 +216,7 @@ static int generic_traverse(PyObject* self, visitproc visitor, void* arg)
  */
 static void clear_slot(PyObject** slot)
 {
-  PyObject*		object;
+  PyObject* object;
 
   object = *slot;
   if (object != 0)
@@ -228,8 +228,8 @@ static void clear_slot(PyObject** slot)
 
 static int generic_clear(PyObject* self)
 {
-  PyMemberDef*		member;
-  int			member_visible;
+  PyMemberDef* member;
+  int          member_visible;
 
   member = Py23_TYPE(self)->tp_members;
   if (member == 0)
@@ -242,7 +242,7 @@ static int generic_clear(PyObject* self)
     for (; member->name != 0; member += 1)
     {
       if (member->type != T_OBJECT && member->type != T_OBJECT_EX)
-	continue;
+        continue;
       clear_slot((PyObject**)((char*)self + member->offset));
     }
     member += 1;
@@ -255,7 +255,7 @@ static int generic_clear(PyObject* self)
  */
 static void generic_dealloc(PyObject* self)
 {
-  PyTypeObject*		type = Py23_TYPE(self);
+  PyTypeObject* type = Py23_TYPE(self);
 
   if (PyObject_IS_GC(self))
     PyObject_GC_UnTrack(self);
@@ -270,19 +270,19 @@ static void generic_dealloc(PyObject* self)
  */
 typedef struct
 {
-  PyObject_HEAD				/* The Python Object Header */
-  void*			dlhandle;	/* dlopen() handle */
-  PyObject*		env;		/* pamh.env */
-  PyObject*		exception;	/* pamh.exception */
-  char*			libpam_version;	/* pamh.libpam_version */
-  PyTypeObject*		message;	/* pamh.Message */
-  PyObject*		module;		/* The Python Pam Module */
-  pam_handle_t*		pamh;		/* The pam handle */
-  PyObject*		print_exception;/* traceback.print_exception */
-  int			py_initialized;	/* True if Py_initialize() called */
-  PyTypeObject*		response;	/* pamh.Response */
-  PyObject*		syslogFile;	/* A (the) SyslogFile instance */
-  PyTypeObject*		xauthdata;	/* pamh.XAuthData */
+  PyObject_HEAD                 /* The Python Object Header */
+  void*         dlhandle;       /* dlopen() handle */
+  PyObject*     env;            /* pamh.env */
+  PyObject*     exception;      /* pamh.exception */
+  char*         libpam_version; /* pamh.libpam_version */
+  PyTypeObject* message;        /* pamh.Message */
+  PyObject*     module;         /* The Python Pam Module */
+  pam_handle_t* pamh;           /* The pam handle */
+  PyObject*     print_exception;/* traceback.print_exception */
+  int           py_initialized; /* True if Py_initialize() called */
+  PyTypeObject* response;       /* pamh.Response */
+  PyObject*     syslogFile;     /* A (the) SyslogFile instance */
+  PyTypeObject* xauthdata;      /* pamh.XAuthData */
 } PamHandleObject;
 
 /*
@@ -297,12 +297,12 @@ static int call_python_handler(
  * The SyslogfileObject.  It emulates a Python file object (in that it has
  * a write method).  It prints to stuff passed to write() on syslog.
  */
-#define	SYSLOGFILE_NAME		"SyslogFile"
+#define SYSLOGFILE_NAME "SyslogFile"
 typedef struct
 {
-  PyObject_HEAD				/* The Python Object Header */
-  char*			buffer;		/* Line buffer */
-  int			size;		/* Size of the buffer in bytes */
+  PyObject_HEAD /* The Python Object Header */
+  char* buffer; /* Line buffer */
+  int   size;   /* Size of the buffer in bytes */
 } SyslogFileObject;
 
 /*
@@ -310,7 +310,7 @@ typedef struct
  */
 static int SyslogFile_clear(PyObject* self)
 {
-  SyslogFileObject*	syslogFile = (SyslogFileObject*)self;
+  SyslogFileObject* syslogFile = (SyslogFileObject*)self;
 
   PyMem_Free(syslogFile->buffer);
   syslogFile->buffer = 0;
@@ -324,13 +324,13 @@ static int SyslogFile_clear(PyObject* self)
 static PyObject* SyslogFile_write(
     PyObject* self, PyObject* args, PyObject* kwds)
 {
-  SyslogFileObject*	syslogFile = (SyslogFileObject*)self;
-  const char*		c;
-  const char*		data = 0;
-  int			len;
-  const char*		newline;
-  PyObject*		result = 0;
-  static char* kwlist[] = {"data", NULL};
+  SyslogFileObject* syslogFile = (SyslogFileObject*)self;
+  const char*       c;
+  const char*       data = 0;
+  int               len;
+  const char*       newline;
+  PyObject*         result = 0;
+  static char*      kwlist[] = {"data", NULL};
 
   if (!PyArg_ParseTupleAndKeywords(args, kwds, "s:write", kwlist, &data))
     goto error_exit;
@@ -373,7 +373,7 @@ error_exit:
  */
 static void SyslogFile_flush(PyObject* self)
 {
-  SyslogFileObject*	syslogFile = (SyslogFileObject*)self;
+  SyslogFileObject* syslogFile = (SyslogFileObject*)self;
 
   if (syslogFile->buffer != 0 && syslogFile->buffer[0] != '\0')
   {
@@ -390,7 +390,7 @@ static PyMethodDef SyslogFile_Methods[] =
     METH_VARARGS|METH_KEYWORDS,
     0
   },
-  {0,0,0,0}		/* Sentinal */
+  {0,0,0,0}  /* Sentinal */
 };
 
 /*
@@ -444,15 +444,15 @@ static char* alloc_module_path(PamHandleObject* pamHandle)
  */
 static int syslog_path_exception(const char* module_path, const char* errormsg)
 {
-  PyObject*	message = 0;
-  PyObject*	name = 0;
-  PyObject*	ptype = 0;
-  PyObject*	ptraceback = 0;
-  PyObject*	pvalue = 0;
-  int		pam_result = 0;
-  PyObject*	stype = 0;
-  const char*	str_name = 0;
-  const char*	str_message = 0;
+  PyObject*   message = 0;
+  PyObject*   name = 0;
+  PyObject*   ptype = 0;
+  PyObject*   ptraceback = 0;
+  PyObject*   pvalue = 0;
+  int         pam_result = 0;
+  PyObject*   stype = 0;
+  const char* str_name = 0;
+  const char* str_message = 0;
 
   PyErr_Fetch(&ptype, &pvalue, &ptraceback);
   /*
@@ -483,7 +483,7 @@ static int syslog_path_exception(const char* module_path, const char* errormsg)
   {
     syslog(
         LOG_AUTHPRIV|LOG_ERR, "%s - %s: %s",
-	errormsg, str_name, str_message);
+        errormsg, str_name, str_message);
   }
   else if (str_name != 0 && str_message != 0)
     syslog(LOG_AUTHPRIV|LOG_ERR, "%s: %s", str_name, str_message);
@@ -537,8 +537,8 @@ static int syslog_path_vmessage(
 static int syslog_path_message(
     const char* module_path, const char* message, ...)
 {
-  va_list	ap;
-  int		result;
+  va_list ap;
+  int     result;
 
   va_start(ap, message);
   result = syslog_path_vmessage(module_path, message, ap);
@@ -551,8 +551,8 @@ static int syslog_path_message(
  */
 static int syslog_message(PamHandleObject* pamHandle, const char* message, ...)
 {
-  va_list	ap;
-  int		result;
+  va_list ap;
+  int     result;
 
   va_start(ap, message);
   char* module_path = alloc_module_path(pamHandle);
@@ -568,12 +568,12 @@ static int syslog_message(PamHandleObject* pamHandle, const char* message, ...)
 static int syslog_path_traceback(
     const char* module_path, PamHandleObject* pamHandle)
 {
-  PyObject*	args = 0;
-  PyObject*	ptraceback = 0;
-  PyObject*	ptype = 0;
-  PyObject*	pvalue = 0;
-  PyObject*	py_resultobj = 0;
-  int		pam_result;
+  PyObject* args = 0;
+  PyObject* ptraceback = 0;
+  PyObject* ptype = 0;
+  PyObject* pvalue = 0;
+  PyObject* py_resultobj = 0;
+  int       pam_result;
 
   PyErr_Fetch(&ptype, &pvalue, &ptraceback);
   /*
@@ -632,12 +632,12 @@ static int syslog_traceback(PamHandleObject* pamHandle)
 /*
  * The PamMessage object - used in conversations.
  */
-#define	PAMMESSAGE_NAME	"Message"
+#define PAMMESSAGE_NAME "Message"
 typedef struct
 {
-  PyObject_HEAD				/* The Python Object header */
-  int			msg_style;	/* struct pam_message.msg_style */
-  PyObject*		msg;		/* struct pam_message.msg */
+  PyObject_HEAD        /* The Python Object header */
+  int       msg_style; /* struct pam_message.msg_style */
+  PyObject* msg;       /* struct pam_message.msg */
 } PamMessageObject;
 
 static char PamMessage_doc[] =
@@ -664,19 +664,19 @@ static PyMemberDef PamMessage_members[] =
     READONLY,
     "The text to display to the user",
   },
-  {0,0,0,0,0},        	/* End of Python visible members */
-  {0,0,0,0,0}		/* Sentinal */
+  {0,0,0,0,0}, /* End of Python visible members */
+  {0,0,0,0,0}  /* Sentinal */
 };
 
 static PyObject* PamMessage_new(
     PyTypeObject* type, PyObject* args, PyObject* kwds)
 {
-  int			err;
-  PyObject*		msg = 0;
-  int			msg_style = 0;
-  PamMessageObject*	pamMessage = 0;
-  PyObject*		self = 0;
-  static char*		kwlist[] = {"msg_style", "msg", 0};
+  int               err;
+  PyObject*         msg = 0;
+  int               msg_style = 0;
+  PamMessageObject* pamMessage = 0;
+  PyObject*         self = 0;
+  static char*      kwlist[] = {"msg_style", "msg", 0};
 
   err = PyArg_ParseTupleAndKeywords(
       args, kwds, "iO!:Message", kwlist,
@@ -700,12 +700,12 @@ error_exit:
 /*
  * The PamResponse object - used in conversations.
  */
-#define	PAMRESPONSE_NAME	"Response"
+#define PAMRESPONSE_NAME "Response"
 typedef struct
 {
-  PyObject_HEAD				/* The Python Object header */
-  PyObject*		resp;		/* struct pam_response.resp */
-  int			resp_retcode;	/* struct pam_response.resp_retcode */
+  PyObject_HEAD           /* The Python Object header */
+  PyObject* resp;         /* struct pam_response.resp */
+  int       resp_retcode; /* struct pam_response.resp_retcode */
 } PamResponseObject;
 
 static char PamResponse_doc[] =
@@ -731,19 +731,19 @@ static PyMemberDef PamResponse_members[] =
     READONLY,
     "The type of response.",
   },
-  {0,0,0,0,0},        	/* End of Python visible members */
-  {0,0,0,0,0}		/* Sentinal */
+  {0,0,0,0,0}, /* End of Python visible members */
+  {0,0,0,0,0}  /* Sentinal */
 };
 
 static PyObject* PamResponse_new(
     PyTypeObject* type, PyObject* args, PyObject* kwds)
 {
-  int			err;
-  PyObject*		resp = 0;
-  int			resp_retcode = 0;
-  PamResponseObject*	pamResponse = 0;
-  PyObject*		self = 0;
-  static char*		kwlist[] = {"resp", "resp_retcode", 0};
+  int                err;
+  PyObject*          resp = 0;
+  int                resp_retcode = 0;
+  PamResponseObject* pamResponse = 0;
+  PyObject*          self = 0;
+  static char*       kwlist[] = {"resp", "resp_retcode", 0};
 
   err = PyArg_ParseTupleAndKeywords(
       args, kwds, "Oi:Response", kwlist,
@@ -772,12 +772,12 @@ error_exit:
 /*
  * The PamXAuthData object - used by PAM_XAUTHDATA item.
  */
-#define	PAMXAUTHDATA_NAME	"XAuthData"
+#define PAMXAUTHDATA_NAME "XAuthData"
 typedef struct
 {
-  PyObject_HEAD				/* The Python Object header */
-  PyObject*		name;		/* struct pam_xauth_data.name */
-  PyObject*		data;		/* struct pam_xauth_data.data */
+  PyObject_HEAD   /* The Python Object header */
+  PyObject* name; /* struct pam_xauth_data.name */
+  PyObject* data; /* struct pam_xauth_data.data */
 } PamXAuthDataObject;
 
 static char PamXAuthData_doc[] =
@@ -802,19 +802,19 @@ static PyMemberDef PamXAuthData_members[] =
     READONLY,
     "The name of the data item.  A string or None.",
   },
-  {0,0,0,0,0},        	/* End of Python visible members */
-  {0,0,0,0,0}		/* Sentinal */
+  {0,0,0,0,0}, /* End of Python visible members */
+  {0,0,0,0,0}  /* Sentinal */
 };
 
 static PyObject* PamXAuthData_new(
     PyTypeObject* type, PyObject* args, PyObject* kwds)
 {
-  int			err;
-  PyObject*		name = 0;
-  PyObject*		data = 0;
-  PamXAuthDataObject*	pamXAuthData = 0;
-  PyObject*		self = 0;
-  static char*		kwlist[] = {"name", "data", 0};
+  int                 err;
+  PyObject*           name = 0;
+  PyObject*           data = 0;
+  PamXAuthDataObject* pamXAuthData = 0;
+  PyObject*           self = 0;
+  static char*        kwlist[] = {"name", "data", 0};
 
   err = PyArg_ParseTupleAndKeywords(
       args, kwds, Py23_String_Parse_Char Py23_String_Parse_Char ":XAuthData", kwlist,
@@ -869,10 +869,10 @@ static int check_pam_result(PamHandleObject* pamHandle, int pam_result)
  */
 static PyObject* PamHandle_get_item(PyObject* self, int item_type)
 {
-  PamHandleObject*	pamHandle = (PamHandleObject*)self;
-  const char*		value;
-  PyObject*		result = 0;
-  int			pam_result;
+  PamHandleObject* pamHandle = (PamHandleObject*)self;
+  const char*      value;
+  PyObject*        result = 0;
+  int              pam_result;
 
   pam_result = pam_get_item(pamHandle->pamh, item_type, (const void**)&value);
   if (check_pam_result(pamHandle, pam_result) == -1)
@@ -892,11 +892,11 @@ error_exit:
 static int PamHandle_set_item(
     PyObject* self, int item_type, char* item_name, PyObject* pyValue)
 {
-  PamHandleObject*	pamHandle = (PamHandleObject*)self;
-  int			pam_result;
-  int			result = -1;
-  char*			value;
-  char			error_message[64];
+  PamHandleObject* pamHandle = (PamHandleObject*)self;
+  int              pam_result;
+  int              result = -1;
+  char*            value;
+  char             error_message[64];
 
   if (pyValue == Py_None)
     value = 0;
@@ -907,7 +907,7 @@ static int PamHandle_set_item(
     {
       snprintf(
           error_message, sizeof(error_message),
-	  "PAM item %s must be set to a string", item_name);
+          "PAM item %s must be set to a string", item_name);
       PyErr_SetString(PyExc_TypeError, error_message);
       goto error_exit;
     }
@@ -932,17 +932,17 @@ error_exit:
 /*
  * The PAM Environment Object & its iterator.
  */
-#define	PAMENV_NAME	"PamEnv"
+#define PAMENV_NAME "PamEnv"
 typedef struct
 {
-  PyObject_HEAD				/* The Python Object header */
-  PamHandleObject*	pamHandle;	/* The PamHandle that owns us */
-  PyTypeObject*		pamEnvIter_type;/* A class for our iterators */
+  PyObject_HEAD                     /* The Python Object header */
+  PamHandleObject* pamHandle;       /* The PamHandle that owns us */
+  PyTypeObject*    pamEnvIter_type; /* A class for our iterators */
 } PamEnvObject;
 
 static PyMemberDef PamEnv_Members[] =
 {
-  {0,0,0,0,0},        	/* End of Python visible members */
+  {0,0,0,0,0}, /* End of Python visible members */
   {
     "Iter",
     T_OBJECT_EX,
@@ -950,21 +950,21 @@ static PyMemberDef PamEnv_Members[] =
     READONLY,
     "Iterator class for " PAMENV_NAME
   },
-  {0,0,0,0,0}        	/* Sentinel */
+  {0,0,0,0,0}  /* Sentinel */
 };
 
-#define	PAMENVITER_NAME	"PamEnvIter"
+#define PAMENVITER_NAME "PamEnvIter"
 typedef struct
 {
   PyObject_HEAD
-  PamEnvObject*		env;		/* The PamEnvObject we are iterating */
-  int			pos;		/* Nest position to return */
-  PyObject*		(*get_entry)(const char* entry); /* What to return */
+  PamEnvObject* env;                             /* The PamEnvObject we are iterating */
+  int           pos;                             /* Nest position to return */
+  PyObject*     (*get_entry)(const char* entry); /* What to return */
 } PamEnvIterObject;
 
 static PyMemberDef PamEnvIter_Members[] =
 {
-  {0,0,0,0,0},        	/* End of Python visible members */
+  {0,0,0,0,0}, /* End of Python visible members */
   {
     "env",
     T_OBJECT_EX,
@@ -972,7 +972,7 @@ static PyMemberDef PamEnvIter_Members[] =
     READONLY,
     "Dictionary to iterate"
   },
-  {0,0,0,0,0}        	/* Sentinel */
+  {0,0,0,0,0}  /* Sentinel */
 };
 
 /*
@@ -981,9 +981,9 @@ static PyMemberDef PamEnvIter_Members[] =
 static PyObject* PamEnvIter_create(
   PamEnvObject* pamEnv, PyObject* (*get_entry)(const char* entry))
 {
-  PyTypeObject*		type = pamEnv->pamEnvIter_type;
-  PamEnvIterObject*	pamEnvIter;
-  PyObject*		result = 0;
+  PyTypeObject*     type = pamEnv->pamEnvIter_type;
+  PamEnvIterObject* pamEnvIter;
+  PyObject*         result = 0;
 
   pamEnvIter = (PamEnvIterObject*)type->tp_alloc(type, 0);
   if (pamEnvIter == 0)
@@ -1005,10 +1005,10 @@ error_exit:
  */
 static PyObject* PamEnvIter_iternext(PyObject* self)
 {
-  PamEnvIterObject*	pamEnvIter = (PamEnvIterObject*)self;
-  char**		env;
-  int			i;
-  PyObject*		result;
+  PamEnvIterObject* pamEnvIter = (PamEnvIterObject*)self;
+  char**            env;
+  int               i;
+  PyObject*         result;
 
   if (pamEnvIter->env == 0)
     goto error_exit;
@@ -1035,7 +1035,7 @@ error_exit:
  */
 static PyObject* PamEnvIter_key_entry(const char* entry)
 {
-  const char*		equals;
+  const char* equals;
 
   equals = strchr(entry, '=');
   if (equals == 0)
@@ -1048,7 +1048,7 @@ static PyObject* PamEnvIter_key_entry(const char* entry)
  */
 static PyObject* PamEnvIter_value_entry(const char* entry)
 {
-  const char*		equals;
+  const char* equals;
 
   equals = strchr(entry, '=');
   if (equals == 0)
@@ -1061,10 +1061,10 @@ static PyObject* PamEnvIter_value_entry(const char* entry)
  */
 static PyObject* PamEnvIter_item_entry(const char* entry)
 {
-  PyObject*		key = 0;
-  PyObject*		result = 0;
-  PyObject*		tuple = 0;
-  PyObject*		value = 0;
+  PyObject* key = 0;
+  PyObject* result = 0;
+  PyObject* tuple = 0;
+  PyObject* value = 0;
 
   key = PamEnvIter_key_entry(entry);
   if (key == 0)
@@ -1077,10 +1077,10 @@ static PyObject* PamEnvIter_item_entry(const char* entry)
     goto error_exit;
   if (PyTuple_SetItem(tuple, 0, key) == -1)
     goto error_exit;
-  key = 0;			/* was stolen */
+  key = 0; /* was stolen */
   if (PyTuple_SetItem(tuple, 1, value) == -1)
     goto error_exit;
-  value = 0;			/* was stolen */
+  value = 0; /* was stolen */
   result = tuple;
   tuple = 0;
 
@@ -1096,7 +1096,7 @@ error_exit:
  */
 static PyObject* PamEnv_iter(PyObject* self)
 {
-  PamEnvObject*		pamEnv = (PamEnvObject*)self;
+  PamEnvObject* pamEnv = (PamEnvObject*)self;
 
   return PamEnvIter_create(pamEnv, PamEnvIter_key_entry);
 }
@@ -1106,7 +1106,7 @@ static PyObject* PamEnv_iter(PyObject* self)
  */
 static const char* PamEnv_getkey(PyObject* key)
 {
-  const char*		result;
+  const char* result;
 
   if (!Py23_String_Check(key))
   {
@@ -1118,7 +1118,7 @@ static const char* PamEnv_getkey(PyObject* key)
   {
     PyErr_SetString(
         PyExc_ValueError,
-	"PAM environment key mustn't be 0 length");
+        "PAM environment key mustn't be 0 length");
     return 0;
   }
   if (strchr(result, '=') != 0)
@@ -1134,9 +1134,9 @@ static const char* PamEnv_getkey(PyObject* key)
  */
 static Py_ssize_t PamEnv_mp_length(PyObject* self)
 {
-  PamEnvObject*		pamEnv = (PamEnvObject*)self;
-  char**		env;
-  int			length;
+  PamEnvObject* pamEnv = (PamEnvObject*)self;
+  char**        env;
+  int           length;
 
   env = pam_getenvlist(pamEnv->pamHandle->pamh);
   if (env == 0)
@@ -1151,10 +1151,10 @@ static Py_ssize_t PamEnv_mp_length(PyObject* self)
  */
 static PyObject* PamEnv_mp_subscript(PyObject* self, PyObject* key)
 {
-  PamEnvObject*		pamEnv = (PamEnvObject*)self;
-  PyObject*		result = 0;
-  const char*		key_str;
-  const char*		value;
+  PamEnvObject* pamEnv = (PamEnvObject*)self;
+  PyObject*     result = 0;
+  const char*   key_str;
+  const char*   value;
 
   key_str = PamEnv_getkey(key);
   if (key_str == 0)
@@ -1176,11 +1176,11 @@ error_exit:
  */
 static int PamEnv_mp_assign(PyObject* self, PyObject* key, PyObject* value)
 {
-  PamEnvObject*		pamEnv = (PamEnvObject*)self;
-  char*			value_str = 0;
-  int			result = -1;
-  const char*		key_str;
-  int			pam_result;
+  PamEnvObject* pamEnv = (PamEnvObject*)self;
+  char*         value_str = 0;
+  int           result = -1;
+  const char*   key_str;
+  int           pam_result;
 
   key_str = PamEnv_getkey(key);
   if (key_str == 0)
@@ -1222,9 +1222,9 @@ error_exit:
 
 static PyMappingMethods PamEnv_as_mapping =
 {
-  PamEnv_mp_length,	/* mp_length */
-  PamEnv_mp_subscript,	/* mp_subscript */
-  PamEnv_mp_assign,	/* mp_ass_subscript */
+  PamEnv_mp_length,    /* mp_length */
+  PamEnv_mp_subscript, /* mp_subscript */
+  PamEnv_mp_assign,    /* mp_ass_subscript */
 };
 
 /*
@@ -1233,12 +1233,12 @@ static PyMappingMethods PamEnv_as_mapping =
 static PyObject* PamEnv_has_key(
     PyObject* self, PyObject* args, PyObject* kwds)
 {
-  PamEnvObject*		pamEnv = (PamEnvObject*)self;
-  PyObject*		key;
-  PyObject*		result = 0;
-  const char*		key_str;
-  const char*		value_str;
-  static char*		kwlist[] = {"key", NULL};
+  PamEnvObject* pamEnv = (PamEnvObject*)self;
+  PyObject*     key;
+  PyObject*     result = 0;
+  const char*   key_str;
+  const char*   value_str;
+  static char*  kwlist[] = {"key", NULL};
 
   if (!PyArg_ParseTupleAndKeywords(args, kwds, "O:has_key", kwlist, &key))
     goto error_exit;
@@ -1260,9 +1260,9 @@ error_exit:
 static PyObject* PamEnv_getitem(
     PyObject* self, PyObject* args, PyObject* kwds)
 {
-  PyObject*		result = 0;
-  PyObject*		key;
-  static char*		kwlist[] = {"key", NULL};
+  PyObject*    result = 0;
+  PyObject*    key;
+  static char* kwlist[] = {"key", NULL};
 
   if (!PyArg_ParseTupleAndKeywords(args, kwds, "O:__getitem__", kwlist, &key))
     goto error_exit;
@@ -1279,14 +1279,14 @@ error_exit:
 static PyObject* PamEnv_get(
     PyObject* self, PyObject* args, PyObject* kwds)
 {
-  int			err;
-  PamEnvObject*		pamEnv = (PamEnvObject*)self;
-  PyObject*		default_value = 0;
-  PyObject*		result = 0;
-  PyObject*		key;
-  const char*		key_str;
-  const char*		value_str;
-  static char*		kwlist[] = {"key", "default", NULL};
+  int           err;
+  PamEnvObject* pamEnv = (PamEnvObject*)self;
+  PyObject*     default_value = 0;
+  PyObject*     result = 0;
+  PyObject*     key;
+  const char*   key_str;
+  const char*   value_str;
+  static char*  kwlist[] = {"key", "default", NULL};
 
   err = PyArg_ParseTupleAndKeywords(
       args, kwds, "O|O:get", kwlist,
@@ -1315,13 +1315,13 @@ error_exit:
 static PyObject* PamEnv_as_sequence(
     PyObject* self, PyObject* (*get_entry)(const char* entry))
 {
-  PamEnvObject*		pamEnv = (PamEnvObject*)self;
-  PyObject*		list = 0;
-  PyObject*		result = 0;
-  PyObject*		entry = 0;
-  char**		env;
-  int			i;
-  int			length;
+  PamEnvObject* pamEnv = (PamEnvObject*)self;
+  PyObject*     list = 0;
+  PyObject*     result = 0;
+  PyObject*     entry = 0;
+  char**        env;
+  int           i;
+  int           length;
 
   env = pam_getenvlist(pamEnv->pamHandle->pamh);
   if (env == 0)
@@ -1341,7 +1341,7 @@ static PyObject* PamEnv_as_sequence(
       goto error_exit;
     if (PyList_SetItem(list, i, entry) == -1)
       goto error_exit;
-    entry = 0;			/* was stolen */
+    entry = 0; /* was stolen */
   }
   result = list;
   list = 0;
@@ -1358,7 +1358,7 @@ error_exit:
 static PyObject* PamEnv_items(
     PyObject* self, PyObject* args, PyObject* kwds)
 {
-  static char*		kwlist[] = {NULL};
+  static char* kwlist[] = {NULL};
 
   if (!PyArg_ParseTupleAndKeywords(args, kwds, ":items", kwlist))
     return 0;
@@ -1371,8 +1371,8 @@ static PyObject* PamEnv_items(
 static PyObject* PamEnv_iteritems(
     PyObject* self, PyObject* args, PyObject* kwds)
 {
-  PamEnvObject*		pamEnv = (PamEnvObject*)self;
-  static char*		kwlist[] = {NULL};
+  PamEnvObject* pamEnv = (PamEnvObject*)self;
+  static char*  kwlist[] = {NULL};
 
   if (!PyArg_ParseTupleAndKeywords(args, kwds, ":iteritems", kwlist))
     return 0;
@@ -1385,8 +1385,8 @@ static PyObject* PamEnv_iteritems(
 static PyObject* PamEnv_iterkeys(
     PyObject* self, PyObject* args, PyObject* kwds)
 {
-  PamEnvObject*		pamEnv = (PamEnvObject*)self;
-  static char*		kwlist[] = {NULL};
+  PamEnvObject* pamEnv = (PamEnvObject*)self;
+  static char*  kwlist[] = {NULL};
 
   if (!PyArg_ParseTupleAndKeywords(args, kwds, ":iterkeys", kwlist))
     return 0;
@@ -1399,8 +1399,8 @@ static PyObject* PamEnv_iterkeys(
 static PyObject* PamEnv_itervalues(
     PyObject* self, PyObject* args, PyObject* kwds)
 {
-  PamEnvObject*		pamEnv = (PamEnvObject*)self;
-  static char*		kwlist[] = {NULL};
+  PamEnvObject* pamEnv = (PamEnvObject*)self;
+  static char*  kwlist[] = {NULL};
 
   if (!PyArg_ParseTupleAndKeywords(args, kwds, ":itervalues", kwlist))
     return 0;
@@ -1413,7 +1413,7 @@ static PyObject* PamEnv_itervalues(
 static PyObject* PamEnv_keys(
     PyObject* self, PyObject* args, PyObject* kwds)
 {
-  static char*		kwlist[] = {NULL};
+  static char* kwlist[] = {NULL};
 
   if (!PyArg_ParseTupleAndKeywords(args, kwds, ":keys", kwlist))
     return 0;
@@ -1426,7 +1426,7 @@ static PyObject* PamEnv_keys(
 static PyObject* PamEnv_values(
     PyObject* self, PyObject* args, PyObject* kwds)
 {
-  static char*		kwlist[] = {NULL};
+  static char* kwlist[] = {NULL};
 
   if (!PyArg_ParseTupleAndKeywords(args, kwds, ":values", kwlist))
     return 0;
@@ -1435,37 +1435,37 @@ static PyObject* PamEnv_values(
 
 static PyMethodDef PamEnv_Methods[] =
 {
-  {"__contains__",  PyCFunctionKwds_cast PamEnv_has_key,METH_VARARGS|METH_KEYWORDS, 0},
-  {"__getitem__",   PyCFunctionKwds_cast PamEnv_getitem,METH_VARARGS|METH_KEYWORDS, 0},
-  {"get",	    PyCFunctionKwds_cast PamEnv_get,	METH_VARARGS|METH_KEYWORDS, 0},
-  {"has_key",	    PyCFunctionKwds_cast PamEnv_has_key,METH_VARARGS|METH_KEYWORDS, 0},
-  {"items",	    PyCFunctionKwds_cast PamEnv_items,	METH_VARARGS|METH_KEYWORDS, 0},
-  {"iteritems",	    PyCFunctionKwds_cast PamEnv_iteritems,METH_VARARGS|METH_KEYWORDS, 0},
-  {"iterkeys",	    PyCFunctionKwds_cast PamEnv_iterkeys,METH_VARARGS|METH_KEYWORDS, 0},
-  {"itervalues",    PyCFunctionKwds_cast PamEnv_itervalues,METH_VARARGS|METH_KEYWORDS, 0},
-  {"keys",	    PyCFunctionKwds_cast PamEnv_keys,	METH_VARARGS|METH_KEYWORDS, 0},
-  {"values",	    PyCFunctionKwds_cast PamEnv_values,	METH_VARARGS|METH_KEYWORDS, 0},
-  {0,0,0,0}        	/* Sentinel */
+  {"__contains__",  PyCFunctionKwds_cast PamEnv_has_key,    METH_VARARGS|METH_KEYWORDS, 0},
+  {"__getitem__",   PyCFunctionKwds_cast PamEnv_getitem,    METH_VARARGS|METH_KEYWORDS, 0},
+  {"get",           PyCFunctionKwds_cast PamEnv_get,        METH_VARARGS|METH_KEYWORDS, 0},
+  {"has_key",       PyCFunctionKwds_cast PamEnv_has_key,    METH_VARARGS|METH_KEYWORDS, 0},
+  {"items",         PyCFunctionKwds_cast PamEnv_items,      METH_VARARGS|METH_KEYWORDS, 0},
+  {"iteritems",     PyCFunctionKwds_cast PamEnv_iteritems,  METH_VARARGS|METH_KEYWORDS, 0},
+  {"iterkeys",      PyCFunctionKwds_cast PamEnv_iterkeys,   METH_VARARGS|METH_KEYWORDS, 0},
+  {"itervalues",    PyCFunctionKwds_cast PamEnv_itervalues, METH_VARARGS|METH_KEYWORDS, 0},
+  {"keys",          PyCFunctionKwds_cast PamEnv_keys,       METH_VARARGS|METH_KEYWORDS, 0},
+  {"values",        PyCFunctionKwds_cast PamEnv_values,     METH_VARARGS|METH_KEYWORDS, 0},
+  {0,0,0,0}  /* Sentinel */
 };
 
 /*
  * Python Getter's for the constants.
  */
-#define	DECLARE_CONSTANT_GET_VALUE(x, v) \
+#define DECLARE_CONSTANT_GET_VALUE(x, v) \
   static PyObject* PamHandle_Constant_ ## x(PyObject* object, void* closure) { \
     object = object; \
     closure = closure; \
     return PyLong_FromLong(v); \
   }
 
-#define	DECLARE_CONSTANT_GET(x)	\
+#define DECLARE_CONSTANT_GET(x) \
   static PyObject* PamHandle_Constant_ ## x(PyObject* object, void* closure) { \
     object = object; \
     closure = closure; \
     return PyLong_FromLong(x); \
   }
 
-#ifdef	HAVE_PAM_FAIL_DELAY
+#ifdef HAVE_PAM_FAIL_DELAY
 DECLARE_CONSTANT_GET_VALUE(HAVE_PAM_FAIL_DELAY, 1)
 #else
 DECLARE_CONSTANT_GET_VALUE(HAVE_PAM_FAIL_DELAY, 0)
@@ -1479,13 +1479,13 @@ DECLARE_CONSTANT_GET(PAM_AUTHTOK_DISABLE_AGING)
 DECLARE_CONSTANT_GET(PAM_AUTHTOK_ERR)
 DECLARE_CONSTANT_GET(PAM_AUTHTOK_EXPIRED)
 DECLARE_CONSTANT_GET(PAM_AUTHTOK_LOCK_BUSY)
-#ifdef	PAM_AUTHTOK_RECOVERY_ERR
+#ifdef PAM_AUTHTOK_RECOVERY_ERR
 DECLARE_CONSTANT_GET(PAM_AUTHTOK_RECOVERY_ERR)
 #endif
-#ifdef	PAM_AUTHTOK_RECOVER_ERR
+#ifdef PAM_AUTHTOK_RECOVER_ERR
 DECLARE_CONSTANT_GET(PAM_AUTHTOK_RECOVER_ERR)
 #endif
-#ifdef	PAM_AUTHTOK_TYPE
+#ifdef PAM_AUTHTOK_TYPE
 DECLARE_CONSTANT_GET(PAM_AUTHTOK_TYPE)
 #endif
 #ifdef PAM_BAD_ITEM
@@ -1557,16 +1557,16 @@ DECLARE_CONSTANT_GET(PAM_UPDATE_AUTHTOK)
 DECLARE_CONSTANT_GET(PAM_USER)
 DECLARE_CONSTANT_GET(PAM_USER_PROMPT)
 DECLARE_CONSTANT_GET(PAM_USER_UNKNOWN)
-#ifdef	PAM_XAUTHDATA
+#ifdef PAM_XAUTHDATA
 DECLARE_CONSTANT_GET(PAM_XAUTHDATA)
 #endif
-#ifdef	PAM_XDISPLAY
+#ifdef PAM_XDISPLAY
 DECLARE_CONSTANT_GET(PAM_XDISPLAY)
 #endif
 
-#define	CONSTANT_GETSET(x) {#x,    PamHandle_Constant_ ## x, 0, 0, 0}
+#define CONSTANT_GETSET(x) {#x,    PamHandle_Constant_ ## x, 0, 0, 0}
 
-#define	MAKE_GETSET_ITEM(t) \
+#define MAKE_GETSET_ITEM(t) \
   static PyObject* PamHandle_get_##t(PyObject* self, void* closure) \
   { \
     closure = closure; \
@@ -1579,7 +1579,7 @@ DECLARE_CONSTANT_GET(PAM_XDISPLAY)
   }
 
 MAKE_GETSET_ITEM(AUTHTOK)
-#ifdef	PAM_AUTHTOK_TYPE
+#ifdef PAM_AUTHTOK_TYPE
 MAKE_GETSET_ITEM(AUTHTOK_TYPE)
 #endif
 MAKE_GETSET_ITEM(OLDAUTHTOK)
@@ -1589,21 +1589,21 @@ MAKE_GETSET_ITEM(SERVICE)
 MAKE_GETSET_ITEM(TTY)
 MAKE_GETSET_ITEM(USER)
 MAKE_GETSET_ITEM(USER_PROMPT)
-#ifdef	PAM_XDISPLAY
+#ifdef PAM_XDISPLAY
 MAKE_GETSET_ITEM(XDISPLAY)
 #endif
 
-#ifdef	PAM_XAUTHDATA
+#ifdef PAM_XAUTHDATA
 /*
  * The PAM_XAUTHDATA item doesn't take strings like the rest of them.
  * It wants a pam_xauth_data structure.
  */
 static PyObject* PamHandle_get_XAUTHDATA(PyObject* self, void* closure)
 {
-  PamHandleObject*	pamHandle = (PamHandleObject*)self;
-  PyObject*		newargs = 0;
-  PyObject*		result = 0;
-  int			pam_result;
+  PamHandleObject*       pamHandle = (PamHandleObject*)self;
+  PyObject*              newargs = 0;
+  PyObject*              result = 0;
+  int                    pam_result;
   struct pam_xauth_data* xauth_data = 0;
 
   closure = closure;
@@ -1620,8 +1620,8 @@ static PyObject* PamHandle_get_XAUTHDATA(PyObject* self, void* closure)
   {
     newargs = Py_BuildValue(
         "s#s#",
-	xauth_data->name, xauth_data->namelen,
-	xauth_data->data, xauth_data->datalen);
+        xauth_data->name, xauth_data->namelen,
+        xauth_data->data, xauth_data->datalen);
     if (newargs == 0)
       goto error_exit;
     result = pamHandle->xauthdata->tp_new(pamHandle->xauthdata, newargs, 0);
@@ -1637,14 +1637,14 @@ error_exit:
 static int PamHandle_set_XAUTHDATA(
     PyObject* self, PyObject* pyValue, void* closure)
 {
-  PamHandleObject*	pamHandle = (PamHandleObject*)self;
-  PyObject*		name = 0;
-  PyObject*		data = 0;
-  int			result = -1;
-  const char*		data_str;
-  const char*		name_str;
-  int			pam_result;
-  struct pam_xauth_data	xauth_data;
+  PamHandleObject*      pamHandle = (PamHandleObject*)self;
+  PyObject*             name = 0;
+  PyObject*             data = 0;
+  int                   result = -1;
+  const char*           data_str;
+  const char*           name_str;
+  int                   pam_result;
+  struct pam_xauth_data xauth_data;
 
   closure = closure;
   xauth_data.name = 0;
@@ -1719,7 +1719,7 @@ static PyGetSetDef PamHandle_Getset[] =
    * Items.
    */
   {"authtok",     PamHandle_get_AUTHTOK,     PamHandle_set_AUTHTOK,     "Authentication token", 0},
-#ifdef	PAM_AUTHTOK_TYPE
+#ifdef PAM_AUTHTOK_TYPE
   {"authtok_type",PamHandle_get_AUTHTOK_TYPE,PamHandle_set_AUTHTOK_TYPE,"XXX in the \"New XXX password:\" prompt", 0},
 #endif
   {"oldauthtok",  PamHandle_get_OLDAUTHTOK,  PamHandle_set_OLDAUTHTOK,  "Old authentication token", 0},
@@ -1729,11 +1729,11 @@ static PyGetSetDef PamHandle_Getset[] =
   {"tty",         PamHandle_get_TTY,         PamHandle_set_TTY,         "Terminal name", 0},
   {"user",        PamHandle_get_USER,        PamHandle_set_USER,        "Authorized user name", 0},
   {"user_prompt", PamHandle_get_USER_PROMPT, PamHandle_set_USER_PROMPT, "Prompt asking for users name", 0},
-#ifdef	PAM_XAUTHDATA
-  {"xauthdata",	  PamHandle_get_XAUTHDATA,   PamHandle_set_XAUTHDATA,   "The name of the X display ($DISPLAY)", 0},
+#ifdef PAM_XAUTHDATA
+  {"xauthdata",   PamHandle_get_XAUTHDATA,   PamHandle_set_XAUTHDATA,   "The name of the X display ($DISPLAY)", 0},
 #endif
-#ifdef	PAM_XDISPLAY
-  {"xdisplay",	  PamHandle_get_XDISPLAY,    PamHandle_set_XDISPLAY,    "The name of the X display ($DISPLAY)", 0},
+#ifdef PAM_XDISPLAY
+  {"xdisplay",    PamHandle_get_XDISPLAY,    PamHandle_set_XDISPLAY,    "The name of the X display ($DISPLAY)", 0},
 #endif
   /*
    * Constants.
@@ -1748,13 +1748,13 @@ static PyGetSetDef PamHandle_Getset[] =
   CONSTANT_GETSET(PAM_AUTHTOK_ERR),
   CONSTANT_GETSET(PAM_AUTHTOK_EXPIRED),
   CONSTANT_GETSET(PAM_AUTHTOK_LOCK_BUSY),
-#ifdef	PAM_AUTHTOK_RECOVERY_ERR
+#ifdef PAM_AUTHTOK_RECOVERY_ERR
   CONSTANT_GETSET(PAM_AUTHTOK_RECOVERY_ERR),
 #endif
-#ifdef 	PAM_AUTHTOK_RECOVER_ERR
+#ifdef PAM_AUTHTOK_RECOVER_ERR
   CONSTANT_GETSET(PAM_AUTHTOK_RECOVER_ERR),
 #endif
-#ifdef	PAM_AUTHTOK_TYPE
+#ifdef PAM_AUTHTOK_TYPE
   CONSTANT_GETSET(PAM_AUTHTOK_TYPE),
 #endif
 #ifdef PAM_BAD_ITEM
@@ -1826,13 +1826,13 @@ static PyGetSetDef PamHandle_Getset[] =
   CONSTANT_GETSET(PAM_USER),
   CONSTANT_GETSET(PAM_USER_PROMPT),
   CONSTANT_GETSET(PAM_USER_UNKNOWN),
-#ifdef  PAM_XAUTHDATA
+#ifdef PAM_XAUTHDATA
   CONSTANT_GETSET(PAM_XAUTHDATA),
 #endif
-#ifdef	PAM_XDISPLAY
+#ifdef PAM_XDISPLAY
   CONSTANT_GETSET(PAM_XDISPLAY),
 #endif
-  {0,0,0,0,0}        	/* Sentinel */
+  {0,0,0,0,0}  /* Sentinel */
 };
 
 /*
@@ -1841,9 +1841,9 @@ static PyGetSetDef PamHandle_Getset[] =
 static int PamHandle_conversation_2message(
     struct pam_message* message, PyObject* object)
 {
-  PyObject*		msg = 0;
-  PyObject*		msg_style = 0;
-  int			result = -1;
+  PyObject* msg = 0;
+  PyObject* msg_style = 0;
+  int       result = -1;
 
   msg_style = PyObject_GetAttrString(object, "msg_style");
   if (msg_style == 0)
@@ -1877,8 +1877,8 @@ error_exit:
 static PyObject* PamHandle_conversation_2response(
     PamHandleObject* pamHandle, struct pam_response* pam_response)
 {
-  PyObject*		newargs;
-  PyObject*  		result = 0;
+  PyObject* newargs;
+  PyObject* result = 0;
 
   newargs = Py_BuildValue("si", pam_response->resp, pam_response->resp_retcode);
   if (newargs == 0)
@@ -1898,22 +1898,22 @@ error_exit:
 static PyObject* PamHandle_conversation(
     PyObject* self, PyObject* args, PyObject* kwds)
 {
-  int			err;
-  PamHandleObject*	pamHandle = (PamHandleObject*)self;
-  PyObject*		prompts = 0;
-  PyObject*		result_tuple = 0;
-  struct pam_message*	message_array = 0;
-  struct pam_message**	message_vector = 0;
-  struct pam_response*	response_array = 0;
-  PyObject*		result = 0;
-  PyObject*		response = 0;
-  const struct pam_conv*conv;
-  int			prompt_count;
-  int			i;
-  int			pam_result;
-  int			prompts_is_sequence;
-  int			py_result;
-  static char*		kwlist[] = {"prompts", NULL};
+  int                    err;
+  PamHandleObject*       pamHandle = (PamHandleObject*)self;
+  PyObject*              prompts = 0;
+  PyObject*              result_tuple = 0;
+  struct pam_message*    message_array = 0;
+  struct pam_message**   message_vector = 0;
+  struct pam_response*   response_array = 0;
+  PyObject*              result = 0;
+  PyObject*              response = 0;
+  const struct pam_conv* conv;
+  int                    prompt_count;
+  int                    i;
+  int                    pam_result;
+  int                    prompts_is_sequence;
+  int                    py_result;
+  static char*           kwlist[] = {"prompts", NULL};
 
   err = PyArg_ParseTupleAndKeywords(
       args, kwds, "O:conversation", kwlist,
@@ -1988,8 +1988,8 @@ static PyObject* PamHandle_conversation(
       if (response == 0)
         goto error_exit;
       if (PyTuple_SetItem(result_tuple, i, response) == -1)
-	goto error_exit;
-      response = 0;			/* was stolen */
+        goto error_exit;
+      response = 0; /* was stolen */
     }
     result = result_tuple;
     result_tuple = 0;
@@ -2011,11 +2011,11 @@ error_exit:
 static PyObject* PamHandle_fail_delay(
     PyObject* self, PyObject* args, PyObject* kwds)
 {
-  int			err;
-  int			micro_sec = 0;
-  int			pam_result;
-  PyObject*		result = 0;
-  static char*		kwlist[] = {"micro_sec", NULL};
+  int          err;
+  int          micro_sec = 0;
+  int          pam_result;
+  PyObject*    result = 0;
+  static char* kwlist[] = {"micro_sec", NULL};
 
   err = PyArg_ParseTupleAndKeywords(
       args, kwds, "i:fail_delay", kwlist,
@@ -2026,7 +2026,7 @@ static PyObject* PamHandle_fail_delay(
   (void)self;
 #else
   {
-    PamHandleObject*	pamHandle = (PamHandleObject*)self;
+    PamHandleObject* pamHandle = (PamHandleObject*)self;
     pam_result = pam_fail_delay(pamHandle->pamh, micro_sec);
     if (check_pam_result(pamHandle, pam_result) == -1)
       goto error_exit;
@@ -2045,12 +2045,12 @@ error_exit:
 static PyObject* PamHandle_get_user(
     PyObject* self, PyObject* args, PyObject* kwds)
 {
-  PamHandleObject*	pamHandle = (PamHandleObject*)self;
-  char*			prompt = 0;
-  PyObject*		result = 0;
-  int			pam_result;
-  const char*		user = 0;
-  static char*		kwlist[] = {"prompt", NULL};
+  PamHandleObject* pamHandle = (PamHandleObject*)self;
+  char*            prompt = 0;
+  PyObject*        result = 0;
+  int              pam_result;
+  const char*      user = 0;
+  static char*     kwlist[] = {"prompt", NULL};
 
   if (!PyArg_ParseTupleAndKeywords(args, kwds, "|z:get_user", kwlist, &prompt))
     goto error_exit;
@@ -2077,12 +2077,12 @@ error_exit:
 static PyObject* PamHandle_strerror(
     PyObject* self, PyObject* args, PyObject* kwds)
 {
-  PamHandleObject*	pamHandle = (PamHandleObject*)self;
-  const char*		err;
-  int			errnum;
-  PyObject*		result = 0;
-  const int		debug_magic = 0x4567abcd;
-  static char*		kwlist[] = {"errnum", NULL};
+  PamHandleObject* pamHandle = (PamHandleObject*)self;
+  const char*      err;
+  int              errnum;
+  PyObject*        result = 0;
+  const int        debug_magic = 0x4567abcd;
+  static char*     kwlist[] = {"errnum", NULL};
 
   if (!PyArg_ParseTupleAndKeywords(args, kwds, "i:strerror", kwlist, &errnum))
     goto error_exit;
@@ -2148,7 +2148,7 @@ static PyMethodDef PamHandle_Methods[] =
     MODULE_NAME "." PAMHANDLE_NAME "." "strerror(errnum)\n"
     "  Return a string describing the pam error errnum."
   },
-  {0,0,0,0}        	/* Sentinel */
+  {0,0,0,0}  /* Sentinel */
 };
 
 static PyMemberDef PamHandle_Members[] =
@@ -2216,7 +2216,7 @@ static PyMemberDef PamHandle_Members[] =
     READONLY,
     "XAuthData class used by " MODULE_NAME "." PAMHANDLE_NAME ".xauthdata"
   },
-  {0,0,0,0,0},        	/* End of Python visible members */
+  {0,0,0,0,0}, /* End of Python visible members */
   {
     "syslogFile",
     T_OBJECT,
@@ -2224,7 +2224,7 @@ static PyMemberDef PamHandle_Members[] =
     READONLY,
     "File like object that writes to syslog"
   },
-  {0,0,0,0,0}		/* Sentinal */
+  {0,0,0,0,0}  /* Sentinal */
 };
 
 static char PamHandle_Doc[] =
@@ -2232,16 +2232,16 @@ static char PamHandle_Doc[] =
   "  A an instance of this class makes the PAM API available to the Python\n"
   "  module.  It is the first argument to every method PAM calls in the module.";
 
-static int	pypam_initialize_count = 0;
+static int pypam_initialize_count = 0;
 
 static void cleanup_pamHandle(pam_handle_t* pamh, void* data, int error_status)
 {
-  PamHandleObject*	pamHandle = (PamHandleObject*)data;
-  void*			dlhandle = pamHandle->dlhandle;
-  PyObject*		py_resultobj = 0;
-  PyObject*		handler_function = 0;
-  int			py_initialized;
-  static const char*	handler_name = "pam_sm_end";
+  PamHandleObject*   pamHandle = (PamHandleObject*)data;
+  void*              dlhandle = pamHandle->dlhandle;
+  PyObject*          py_resultobj = 0;
+  PyObject*          handler_function = 0;
+  int                py_initialized;
+  static const char* handler_name = "pam_sm_end";
 
   (void)pamh;
   (void)error_status;
@@ -2253,7 +2253,7 @@ static void cleanup_pamHandle(pam_handle_t* pamh, void* data, int error_status)
   {
     call_python_handler(
         &py_resultobj, pamHandle, handler_function,
-	handler_name, 0, 0, 0);
+        handler_name, 0, 0, 0);
   }
   py_xdecref(py_resultobj);
   py_xdecref(handler_function);
@@ -2276,15 +2276,15 @@ static int load_user_module(
     PyObject** user_module, PamHandleObject* pamHandle,
     const char* module_path)
 {
-  PyObject*	builtins = 0;
-  PyObject*	module_dict = 0;
-  FILE*		module_fp = 0;
-  char*		user_module_name = 0;
-  const char*	tmp_const_user_module_name = 0;
-  PyObject*	py_resultobj = 0;
-  char*		dot;
-  int		pam_result;
-  int		py_result;
+  PyObject*   builtins = 0;
+  PyObject*   module_dict = 0;
+  FILE*       module_fp = 0;
+  char*       user_module_name = 0;
+  const char* tmp_const_user_module_name = 0;
+  PyObject*   py_resultobj = 0;
+  char*       dot;
+  int         pam_result;
+  int         py_result;
 
   /*
    * Open the file.
@@ -2294,7 +2294,7 @@ static int load_user_module(
   {
     syslog_path_message(
         module_path, "Can not open module: %s",
-	strerror(errno));
+        strerror(errno));
     pam_result = PAM_OPEN_ERR;
     goto error_exit;
   }
@@ -2320,7 +2320,7 @@ static int load_user_module(
   {
     pam_result = syslog_path_exception(
         module_path,
-	"PyModule_New(pamh.module.__file__) failed");
+        "PyModule_New(pamh.module.__file__) failed");
     goto error_exit;
   }
   py_result =
@@ -2329,7 +2329,7 @@ static int load_user_module(
   {
     pam_result = syslog_path_exception(
         module_path,
-	"PyModule_AddStringConstant(pamh.module, '__file__', module_path) failed");
+        "PyModule_AddStringConstant(pamh.module, '__file__', module_path) failed");
     goto error_exit;
   }
   /*
@@ -2338,15 +2338,15 @@ static int load_user_module(
   if (!PyObject_HasAttrString(*user_module , "__builtins__"))
   {
     builtins = PyEval_GetBuiltins();
-    Py_INCREF(builtins);	/* is stolen */
+    Py_INCREF(builtins); /* is stolen */
     if (PyModule_AddObject(*user_module, "__builtins__", builtins) == -1)
     {
       pam_result = syslog_path_exception(
           module_path,
-	  "PyModule_AddObject(pamh.module, '__builtins__', builtins) failed");
+          "PyModule_AddObject(pamh.module, '__builtins__', builtins) failed");
       goto error_exit;
     }
-    builtins = 0;		/* was borrowed */
+    builtins = 0; /* was borrowed */
   }
   /*
    * Call it.
@@ -2354,8 +2354,8 @@ static int load_user_module(
   module_dict = PyModule_GetDict(*user_module);
   py_resultobj = PyRun_FileExFlags(
       module_fp, module_path, Py_file_input, module_dict, module_dict, 1, 0);
-  module_fp = 0;		/* it was closed */
-  module_dict = 0;		/* was borrowed */
+  module_fp = 0;   /* it was closed */
+  module_dict = 0; /* was borrowed */
   /*
    * If that didn't work there was an exception.  Errk!
    */
@@ -2382,20 +2382,20 @@ error_exit:
  * type in non-obvious ways.
  */
 static PyTypeObject* newHeapType(
-  PyObject*		module,		/* Module declaring type (required) */
-  const char*		name,		/* tp_name (required) */
-  int			basicsize,	/* tp_basicsize (required) */
-  char*			doc, 		/* tp_doc (optional) */
-  inquiry		clear,		/* tp_clear (optional) */
-  struct PyMethodDef*	methods,	/* tp_methods (optional) */
-  struct PyMemberDef*	members,	/* tp_members (optional) */
-  struct PyGetSetDef*	getset,		/* tp_getset (optional) */
-  newfunc		new		/* tp_new (optional) */
+  PyObject*           module,    /* Module declaring type (required) */
+  const char*         name,      /* tp_name (required) */
+  int                 basicsize, /* tp_basicsize (required) */
+  char*               doc,       /* tp_doc (optional) */
+  inquiry             clear,     /* tp_clear (optional) */
+  struct PyMethodDef* methods,   /* tp_methods (optional) */
+  struct PyMemberDef* members,   /* tp_members (optional) */
+  struct PyGetSetDef* getset,    /* tp_getset (optional) */
+  newfunc             new        /* tp_new (optional) */
 )
 {
-  PyObject*		pyName = 0;
-  PyTypeObject*		result = 0;
-  PyTypeObject*		type = 0;
+  PyObject*     pyName = 0;
+  PyTypeObject* result = 0;
+  PyTypeObject* type = 0;
 
   pyName = Py23_String_FromString(name);
   if (pyName == 0)
@@ -2447,18 +2447,18 @@ error_exit:
  * type object is discarded.
  */
 static PyObject* newSingletonObject(
-  PyObject*		module,		/* Module declaring type (required) */
-  const char*		name,		/* tp_name (required) */
-  int			basicsize,	/* tp_basicsize (required) */
-  char*			doc, 		/* tp_doc (optional) */
-  inquiry		clear,		/* tp_clear (optional) */
-  struct PyMethodDef*	methods,	/* tp_methods (optional) */
-  struct PyMemberDef*	members,	/* tp_members (optional) */
-  struct PyGetSetDef*	getset		/* tp_getset (optional) */
+  PyObject*           module,    /* Module declaring type (required) */
+  const char*         name,      /* tp_name (required) */
+  int                 basicsize, /* tp_basicsize (required) */
+  char*               doc,       /* tp_doc (optional) */
+  inquiry             clear,     /* tp_clear (optional) */
+  struct PyMethodDef* methods,   /* tp_methods (optional) */
+  struct PyMemberDef* members,   /* tp_members (optional) */
+  struct PyGetSetDef* getset     /* tp_getset (optional) */
 )
 {
-  PyObject*		result = 0;
-  PyTypeObject*  	type = 0;
+  PyObject*     result = 0;
+  PyTypeObject* type = 0;
 
   type = newHeapType(
       module, name, basicsize, doc, clear, methods, members, getset, 0);
@@ -2476,18 +2476,18 @@ static PyObject* newSingletonObject(
 static int get_pamHandle(
   PamHandleObject** result, pam_handle_t* pamh, const char** argv)
 {
-  void*			dlhandle = 0;
-  int			do_initialize;
-  char*			module_dir;
-  char*			module_path = 0;
-  char*			module_data_name = 0;
-  PyObject*		user_module = 0;
-  PamEnvObject*		pamEnv = 0;
-  PamHandleObject*	pamHandle = 0;
-  PyObject*		pamHandle_module = 0;
-  SyslogFileObject*	syslogFile = 0;
-  PyObject*		tracebackModule = 0;
-  int			pam_result;
+  void*             dlhandle = 0;
+  int               do_initialize;
+  char*             module_dir;
+  char*             module_path = 0;
+  char*             module_data_name = 0;
+  PyObject*         user_module = 0;
+  PamEnvObject*     pamEnv = 0;
+  PamHandleObject*  pamHandle = 0;
+  PyObject*         pamHandle_module = 0;
+  SyslogFileObject* syslogFile = 0;
+  PyObject*         tracebackModule = 0;
+  int               pam_result;
 
   /*
    * Figure out where the module lives.
@@ -2536,7 +2536,7 @@ static int get_pamHandle(
   {
     pam_result = syslog_path_message(
         module_path,
-	"Can't load python library %s: %s", libpython_so, dlerror());
+        "Can't load python library %s: %s", libpython_so, dlerror());
     goto error_exit;
   }
   do_initialize = pypam_initialize_count > 0 || !Py_IsInitialized();
@@ -2553,29 +2553,29 @@ static int get_pamHandle(
   if (pamHandle_module == 0)
   {
     pam_result = syslog_path_exception(
-	module_path,
-	"PyModule_New(module_data_name) failed");
+        module_path,
+        "PyModule_New(module_data_name) failed");
     goto error_exit;
   }
   /*
    * Create the type we use for our object.
    */
   pamHandle = (PamHandleObject*)newSingletonObject(
-      pamHandle_module,			/* __module__ */
-      PAMHANDLE_NAME "_type",		/* tp_name */
-      sizeof(PamHandleObject),		/* tp_basicsize */
-      PamHandle_Doc,			/* tp_doc */
-      0,				/* tp_clear */
-      PamHandle_Methods,		/* tp_methods */
-      PamHandle_Members,		/* tp_members */
-      PamHandle_Getset);		/* tp_getset */
+      pamHandle_module,        /* __module__ */
+      PAMHANDLE_NAME "_type",  /* tp_name */
+      sizeof(PamHandleObject), /* tp_basicsize */
+      PamHandle_Doc,           /* tp_doc */
+      0,                       /* tp_clear */
+      PamHandle_Methods,       /* tp_methods */
+      PamHandle_Members,       /* tp_members */
+      PamHandle_Getset);       /* tp_getset */
   if (pamHandle == 0)
   {
     pam_result = syslog_path_exception(module_path, "Can't create pamh Object");
     goto error_exit;
   }
   if (PyObject_IS_GC((PyObject*)pamHandle))
-    PyObject_GC_UnTrack(pamHandle);	/* No refs are visible to python */
+    PyObject_GC_UnTrack(pamHandle); /* No refs are visible to python */
   pamHandle->dlhandle = dlhandle;
   dlhandle = 0;
   pamHandle->libpam_version =
@@ -2590,14 +2590,14 @@ static int get_pamHandle(
    * Create the object we use to handle the PAM environment.
    */
   pamEnv = (PamEnvObject*)newSingletonObject(
-      pamHandle_module,			/* __module__ */
-      PAMENV_NAME "_type",		/* tp_name */
-      sizeof(PamEnvObject),		/* tp_basicsize */
-      0,				/* tp_doc */
-      0,				/* tp_clear */
-      PamEnv_Methods,			/* tp_methods */
-      PamEnv_Members,			/* tp_members */
-      0);				/* tp_getset */
+      pamHandle_module,     /* __module__ */
+      PAMENV_NAME "_type",  /* tp_name */
+      sizeof(PamEnvObject), /* tp_basicsize */
+      0,                    /* tp_doc */
+      0,                    /* tp_clear */
+      PamEnv_Methods,       /* tp_methods */
+      PamEnv_Members,       /* tp_members */
+      0);                   /* tp_getset */
   if (pamEnv == 0)
   {
     pam_result = syslog_path_exception(module_path, "Can't create pamh.env");
@@ -2607,15 +2607,15 @@ static int get_pamHandle(
   Py23_TYPE(pamEnv)->tp_iter = PamEnv_iter;
   pamEnv->pamHandle = pamHandle;
   pamEnv->pamEnvIter_type = newHeapType(
-      pamHandle_module,			/* __module__ */
-      PAMENVITER_NAME "_type",		/* tp_name */
-      sizeof(PamEnvIterObject),		/* tp_basicsize */
-      0,				/* tp_doc */
-      0,				/* tp_clear */
-      0,				/* tp_methods */
-      PamEnvIter_Members,		/* tp_members */
-      0,				/* tp_getset */
-      0);				/* tp_new */
+      pamHandle_module,         /* __module__ */
+      PAMENVITER_NAME "_type",  /* tp_name */
+      sizeof(PamEnvIterObject), /* tp_basicsize */
+      0,                        /* tp_doc */
+      0,                        /* tp_clear */
+      0,                        /* tp_methods */
+      PamEnvIter_Members,       /* tp_members */
+      0,                        /* tp_getset */
+      0);                       /* tp_new */
   if (pamEnv->pamEnvIter_type == 0)
     goto error_exit;
   if (PyObject_IS_GC((PyObject*)pamEnv->pamEnvIter_type))
@@ -2633,15 +2633,15 @@ static int get_pamHandle(
    * Create the type for the PamMessageObject.
    */
   pamHandle->message = newHeapType(
-      pamHandle_module,			/* __module__ */
-      PAMMESSAGE_NAME "_type",		/* tp_name */
-      sizeof(PamMessageObject),		/* tp_basicsize */
-      PamMessage_doc,			/* tp_doc */
-      0,				/* tp_clear */
-      0,				/* tp_methods */
-      PamMessage_members,		/* tp_members */
-      0,				/* tp_getset */
-      PamMessage_new);			/* tp_new */
+      pamHandle_module,         /* __module__ */
+      PAMMESSAGE_NAME "_type",  /* tp_name */
+      sizeof(PamMessageObject), /* tp_basicsize */
+      PamMessage_doc,           /* tp_doc */
+      0,                        /* tp_clear */
+      0,                        /* tp_methods */
+      PamMessage_members,       /* tp_members */
+      0,                        /* tp_getset */
+      PamMessage_new);          /* tp_new */
   if (pamHandle->message == 0)
   {
     pam_result = syslog_path_exception(
@@ -2652,39 +2652,39 @@ static int get_pamHandle(
    * Create the type for the PamResponseObject.
    */
   pamHandle->response = newHeapType(
-      pamHandle_module,			/* __module__ */
-      PAMRESPONSE_NAME "_type",		/* tp_name */
-      sizeof(PamResponseObject),	/* tp_basicsize */
-      PamResponse_doc,			/* tp_doc */
-      0,				/* tp_clear */
-      0,				/* tp_methods */
-      PamResponse_members,		/* tp_members */
-      0,				/* tp_getset */
-      PamResponse_new);			/* tp_new */
+      pamHandle_module,          /* __module__ */
+      PAMRESPONSE_NAME "_type",  /* tp_name */
+      sizeof(PamResponseObject), /* tp_basicsize */
+      PamResponse_doc,           /* tp_doc */
+      0,                         /* tp_clear */
+      0,                         /* tp_methods */
+      PamResponse_members,       /* tp_members */
+      0,                         /* tp_getset */
+      PamResponse_new);          /* tp_new */
   if (pamHandle->response == 0)
   {
     pam_result = syslog_path_exception(
         module_path,
-	"Can't create pamh.Response");
+        "Can't create pamh.Response");
     goto error_exit;
   }
   /*
    * Create the Syslogfile Type & Object.
    */
   syslogFile = (SyslogFileObject*)newSingletonObject(
-      pamHandle_module,			/* __module__ */
-      SYSLOGFILE_NAME "_type",		/* tp_name */
-      sizeof(SyslogFileObject),		/* tp_basicsize */
-      0,				/* tp_doc */
-      SyslogFile_clear,			/* tp_clear */
-      SyslogFile_Methods,		/* tp_methods */
-      0,				/* tp_members */
-      0);				/* tp_getset */
+      pamHandle_module,         /* __module__ */
+      SYSLOGFILE_NAME "_type",  /* tp_name */
+      sizeof(SyslogFileObject), /* tp_basicsize */
+      0,                        /* tp_doc */
+      SyslogFile_clear,         /* tp_clear */
+      SyslogFile_Methods,       /* tp_methods */
+      0,                        /* tp_members */
+      0);                       /* tp_getset */
   if (syslogFile == 0)
   {
     pam_result = syslog_path_exception(
         module_path,
-	"Can't create pamh.syslogFile");
+        "Can't create pamh.syslogFile");
     goto error_exit;
   }
   syslogFile->buffer = 0;
@@ -2699,7 +2699,7 @@ static int get_pamHandle(
   {
     pam_result = syslog_path_exception(
         module_path,
-	"PyImport_ImportModule('traceback') failed");
+        "PyImport_ImportModule('traceback') failed");
     goto error_exit;
   }
   pamHandle->print_exception =
@@ -2708,7 +2708,7 @@ static int get_pamHandle(
   {
     pam_result = syslog_path_exception(
         module_path,
-	"PyObject_GetAttrString(traceback, 'print_exception') failed");
+        "PyObject_GetAttrString(traceback, 'print_exception') failed");
     goto error_exit;
   }
   Py_INCREF(pamHandle->print_exception); /* Borrowed reference */
@@ -2716,15 +2716,15 @@ static int get_pamHandle(
    * Create the type for the PamXAuthDataObject.
    */
   pamHandle->xauthdata = newHeapType(
-      pamHandle_module,			/* __module__ */
-      PAMXAUTHDATA_NAME "_type",	/* tp_name */
-      sizeof(PamXAuthDataObject),	/* tp_basicsize */
-      PamXAuthData_doc,			/* tp_doc */
-      0,				/* tp_clear */
-      0,				/* tp_methods */
-      PamXAuthData_members,		/* tp_members */
-      0,				/* tp_getset */
-      PamXAuthData_new);		/* tp_new */
+      pamHandle_module,           /* __module__ */
+      PAMXAUTHDATA_NAME "_type",  /* tp_name */
+      sizeof(PamXAuthDataObject), /* tp_basicsize */
+      PamXAuthData_doc,           /* tp_doc */
+      0,                          /* tp_clear */
+      0,                          /* tp_methods */
+      PamXAuthData_members,       /* tp_members */
+      0,                          /* tp_getset */
+      PamXAuthData_new);          /* tp_new */
   if (pamHandle->xauthdata == 0)
   {
     pam_result = syslog_path_exception(
@@ -2769,13 +2769,13 @@ static int call_python_handler(
     PyObject* handler_function, const char* handler_name,
     int flags, int argc, const char** argv)
 {
-  PyObject*		arg_object = 0;
-  PyObject*		argv_object = 0;
-  PyObject*		flags_object = 0;
-  PyObject*		handler_args = 0;
-  PyObject*		py_resultobj = 0;
-  int			i;
-  int			pam_result;
+  PyObject* arg_object = 0;
+  PyObject* argv_object = 0;
+  PyObject* flags_object = 0;
+  PyObject* handler_args = 0;
+  PyObject* py_resultobj = 0;
+  int       i;
+  int       pam_result;
 
   if (!PyCallable_Check(handler_function))
   {
@@ -2808,22 +2808,22 @@ static int call_python_handler(
       arg_object = Py23_String_FromString(argv[i]);
       if (arg_object == 0)
       {
-	pam_result = syslog_exception(
-	    pamHandle,
-	    Py23_Stringify(Py23_String_FromString) "(argv[i]) failed");
-	goto error_exit;
+        pam_result = syslog_exception(
+            pamHandle,
+            Py23_Stringify(Py23_String_FromString) "(argv[i]) failed");
+        goto error_exit;
       }
       PyList_SET_ITEM(argv_object, i, arg_object);
-      arg_object = 0;		/* It was pinched by SET_ITEM */
+      arg_object = 0; /* It was pinched by SET_ITEM */
     }
     handler_args =
-	Py_BuildValue("OOO", pamHandle, flags_object, argv_object);
+        Py_BuildValue("OOO", pamHandle, flags_object, argv_object);
   }
   if (handler_args == 0)
   {
     pam_result = syslog_exception(
         pamHandle,
-	"handler_args = Py_BuildValue(...) failed");
+        "handler_args = Py_BuildValue(...) failed");
     goto error_exit;
   }
   /*
@@ -2858,10 +2858,10 @@ static int call_handler(
   const char* handler_name, pam_handle_t* pamh,
   int flags, int argc, const char** argv)
 {
-  PyObject*		handler_function = 0;
-  PamHandleObject*	pamHandle = 0;
-  PyObject*		py_resultobj = 0;
-  int			pam_result;
+  PyObject*        handler_function = 0;
+  PamHandleObject* pamHandle = 0;
+  PyObject*        py_resultobj = 0;
+  int              pam_result;
 
   /*
    * Initialise Python, and get a copy of our object.
@@ -2891,8 +2891,8 @@ static int call_handler(
   if (!Py23_Int_Check(py_resultobj) && !PyLong_Check(py_resultobj))
   {
     pam_result = syslog_message(
-	pamHandle,
-	"%s() did not return an integer.", handler_name);
+        pamHandle,
+        "%s() did not return an integer.", handler_name);
     goto error_exit;
   }
   pam_result = Py23_Int_AsLong(py_resultobj);

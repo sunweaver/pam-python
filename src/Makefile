@@ -1,6 +1,6 @@
 PYTHON ?= python3
 
-all:	ctest pam_python.so test-pam_$(PYTHON).pam
+all: ctest pam_python.so test-pam_$(PYTHON).pam
 
 WARNINGS=-Wall -Wextra -Wundef -Wshadow -Wpointer-arith -Wbad-function-cast -Wsign-compare -Waggregate-return -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wno-error=aggregate-return -Werror
 
@@ -27,7 +27,7 @@ clean:
 	[ ! -e /etc/pam.d/test-pam_$(PYTHON)-installed.pam ] || { s=$$([ $$(id -u) = 0 ] || echo sudo); $$s rm -f /etc/pam.d/test-pam_$(PYTHON)-installed.pam; }
 
 .PHONY: ctest
-ctest:	ctest.c Makefile
+ctest: ctest.c Makefile
 	gcc -O0 $(WARNINGS) -g -o $@ ctest.c -lpam
 
 test-pam_$(PYTHON).pam: test-pam_python.pam.in Makefile

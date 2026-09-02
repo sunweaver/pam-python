@@ -5,7 +5,7 @@ try:
   import sysconfig
 except ImportError:
   from distutils import sysconfig
-import os 
+import os
 import sys
 
 try:

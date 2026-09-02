@@ -1,51 +1,51 @@
-.PHONY:	all
-all:	doc lib
+.PHONY: all
+all: doc lib
 
-.PHONY:	lib
+.PHONY:lib
 lib:
 	$(MAKE) --directory src
 
-.PHONY:	doc
+.PHONY: doc
 doc:
 	$(MAKE) --directory doc
 
-.PHONY:	test
-test:	
+.PHONY: test
+test:
 	$(MAKE) --directory src $@
 
-.PHONY:	clean-pam_python
+.PHONY: clean-pam_python
 clean-pam_python:
 	rm -rf pam_python
 
-.PHONY:	clean
+.PHONY: clean
 clean: clean-pam_python
 	$(MAKE) --directory doc $@
 	$(MAKE) --directory src $@
 
-.PHONY:	install
+.PHONY: install
 install: install-doc install-lib
 
-.PHONY:	install-doc
+.PHONY: install-doc
 install-doc: clean-pam_python
 	$(MAKE) --directory doc $@
 
-.PHONY:	install-lib
+.PHONY: install-lib
 install-lib: clean-pam_python
 	$(MAKE) --directory src $@
 
 RELEASE_SOURCES = \
-	ChangeLog.txt \
-	Makefile \
-	Makefile.release \
-	pam-python.html \
-	README.txt \
-	doc/pam_python.rst \
-	src/ctest.c \
-	src/Makefile \
-	src/pam_python.c \
-	src/setup.py \
-	src/test-pam_python.pam.in \
-	src/test.py
+    ChangeLog.txt \
+    Makefile \
+    Makefile.release \
+    pam-python.html \
+    README.txt \
+    doc/pam_python.rst \
+    src/ctest.c \
+    src/Makefile \
+    src/pam_python.c \
+    src/setup.py \
+    src/test-pam_python.pam.in \
+    src/test.py
 
 include Makefile.release
 

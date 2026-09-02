@@ -6,7 +6,7 @@
  *   ./ctest python|python3
  *   sudo rm /etc/pam.d/test-pam_python.pam
  */
-#define	_GNU_SOURCE
+#define _GNU_SOURCE
 
 #ifdef __APPLE__
 #include <mach-o/dyld.h>
@@ -20,15 +20,15 @@
 #include <unistd.h>
 
 struct walk_info {
-  const char*	pam_python_so;
-  int		libpam_python_seen;
-  int		python_seen;
+  const char*   pam_python_so;
+  int           libpam_python_seen;
+  int           python_seen;
 };
 
 static int conv(
     int num_msg, const struct pam_message** msg, struct pam_response** resp, void *appdata_ptr)
 {
-  int		i;
+  int i;
 
   (void)appdata_ptr;
   *resp = malloc(num_msg * sizeof(**resp));
@@ -71,7 +71,7 @@ static void walk_dlls(struct walk_info* walk_info)
 #else
 static int dl_walk(struct dl_phdr_info* info, size_t size, void* data)
 {
-  struct walk_info*		walk_info = data;
+  struct walk_info* walk_info = data;
 
   (void)size;
   if (strstr(info->dlpi_name, "/pam_python.so") != 0)
@@ -91,13 +91,13 @@ static void walk_dlls(struct walk_info* walk_info)
 
 int main(int argc, char **argv)
 {
-  int			exit_status;
-  struct pam_conv	convstruct;
-  pam_handle_t*		pamh;
-  struct walk_info	walk_info_before;
-  struct walk_info	walk_info_after;
-  const char*		pyver;
-  char			filename[128];
+  int              exit_status;
+  struct pam_conv  convstruct;
+  pam_handle_t*    pamh;
+  struct walk_info walk_info_before;
+  struct walk_info walk_info_after;
+  const char*      pyver;
+  char             filename[128];
 
   if (argc != 2 || !(strcmp(argv[1], "python") || strcmp(argv[1], "python3"))) {
     fprintf(stderr, "usage: %s python|python3\n", argv[0]);
