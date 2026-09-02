@@ -6,7 +6,7 @@ pam-python-1.1.0~UNRELEASED Fri, 22 Oct 2022 22:55:11 +0200
   src/setup.py: use sysconfig if available (distutils.sysconfig is deprecated)
   Use new PyConfig API when building against Python 3.12 and beyond.
   Add test for CVE-2019-16729.
-  Support building with gcc-16.
+  Support building against glibc 2.43.
   Massive white-space clean-up.
 
 pam-python-1.0.9 Fri, 13 Nov 2020 07:18:11 +1000
